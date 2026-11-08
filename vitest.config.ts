@@ -7,6 +7,7 @@ export default defineConfig({
       "apps/*/src/**/*.test.ts",
       "apps/dashboard/projects/*/src/**/*.test.ts",
       "scripts/**/*.test.ts",
+      "test/**/*.test.ts",
     ],
     passWithNoTests: true,
   },

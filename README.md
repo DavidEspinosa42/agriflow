@@ -65,7 +65,8 @@ controller (see [ROADMAP](ROADMAP.md)).
 
 The MySQL tests are opt-in: set `MYSQL_TEST_URL` to a throwaway database whose name ends in `_test`
 (see [ADR 0002](docs/adr/0002-mysql-central.md)). Without it they are skipped and the in-memory
-repository tests still run.
+repository tests still run. `MYSQL_E2E_URL` (a database ending in `_e2e_test`) additionally runs
+the offline-outage end-to-end test against MySQL.
 
 ## Usage
 

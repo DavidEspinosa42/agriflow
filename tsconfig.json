@@ -6,6 +6,7 @@
     "apps/server/src",
     "apps/dashboard/projects/shared/src",
     "scripts",
+    "test",
     "vitest.config.ts"
   ]
 }

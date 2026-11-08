@@ -2,6 +2,7 @@ packages:
   - packages/*
   - apps/*
   - scripts
+  - test
 minimumReleaseAge: 10080
 # Install scripts are not needed: esbuild ships prebuilt binaries and the others have fallbacks.
 allowBuilds:
