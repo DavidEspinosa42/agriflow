@@ -36,7 +36,7 @@ without creating duplicates.
 
 ## Built with
 
-Node.js and TypeScript, Fastify, SQLite (better-sqlite3) on the controller, MySQL (Drizzle, mysql2)
+Node.js and TypeScript, Fastify, SQLite (built-in `node:sqlite`) on the controller, MySQL (Drizzle, mysql2)
 centrally, Angular, zod, Biome, Vitest and fast-check, pnpm workspaces.
 
 ## Setup
