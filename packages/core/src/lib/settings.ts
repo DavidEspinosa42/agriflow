@@ -9,6 +9,7 @@ export const Settings = z.strictObject({
   syncRetryBaseSeconds: z.int().positive().default(5),
   syncRetryMaxSeconds: z.int().positive().default(900),
   litersPerPulse: z.number().positive().default(0.01),
+  maxFlowLitersPerMinute: z.number().positive().default(300),
 });
 export type Settings = z.infer<typeof Settings>;
 
