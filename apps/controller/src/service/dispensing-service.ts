@@ -278,6 +278,7 @@ export class DispensingService {
   }
 
   stop(): void {
+    this.#pending = null;
     const nowMs = this.#o.now();
     this.#o.hardware.relay.disable();
     if (this.#drainMeter(nowMs) === "rejected") {
@@ -311,15 +312,30 @@ export class DispensingService {
       this.#tick();
     } catch (error) {
       // Any unexpected failure while dispensing must leave the pump off.
-      this.#failSafe();
+      this.failSafe();
       throw error;
     }
   }
 
-  #failSafe(): void {
+  /**
+   * Called when something outside the service fails and the pump state cannot be trusted. The
+   * relay goes off, any pending scan or authorization is dropped, and a running session is
+   * ended as a fault, so a later start needs a fresh authorization.
+   */
+  failSafe(): void {
     this.#o.hardware.relay.disable();
-    if (this.#state.kind === "dispensing") {
-      this.#apply({ type: "fault", nowMs: this.#o.now() });
+    this.#pending = null;
+    if (this.#state.kind === "dispensing" || this.#state.kind === "authorized") {
+      const nowMs = this.#o.now();
+      if (this.#state.kind === "dispensing") {
+        try {
+          // The relay is already off. Count pulses that are still outstanding and valid.
+          this.#drainMeter(nowMs);
+        } catch {
+          // An unreadable meter must not block ending the session; progress so far is kept.
+        }
+      }
+      this.#apply({ type: "fault", nowMs });
       this.#notice = { kind: "fault", reason: "internal_error" };
     }
   }
@@ -433,6 +449,12 @@ export class DispensingService {
       this.#unpersisted = after;
       this.#retryPersist();
     }
+  }
+
+  /** Retry storing a finished session that could not be written. True when nothing is waiting. */
+  flush(): boolean {
+    this.#retryPersist();
+    return this.#unpersisted === null;
   }
 
   #retryPersist(): void {
