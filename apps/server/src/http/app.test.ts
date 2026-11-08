@@ -1,4 +1,10 @@
-import type { SessionRecord } from "@agriflow/core";
+import {
+  ConsumptionReportSchema,
+  DeviceListSchema,
+  type SessionRecord,
+  TotalsListSchema,
+  TransactionPageSchema,
+} from "@agriflow/core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemoryRepository } from "../db/repository.ts";
 import { buildApp } from "./app.ts";
@@ -179,6 +185,19 @@ describe("manager read API", () => {
     expect((await get("/v1/devices")).json().items).toEqual([
       { deviceId: "pump-01", tankId: "tank-1", sessions: 2, lastReceivedAtMs: 5000 },
     ]);
+  });
+
+  it("returns bodies that match the shared protocol schemas the dashboard validates with", async () => {
+    expect(TransactionPageSchema.safeParse((await get("/v1/transactions")).json()).success).toBe(
+      true,
+    );
+    for (const groupBy of ["machine", "operator", "device", "day"]) {
+      const body = (await get(`/v1/reports/consumption?groupBy=${groupBy}`)).json();
+      expect(ConsumptionReportSchema.safeParse(body).success, groupBy).toBe(true);
+    }
+    expect(TotalsListSchema.safeParse((await get("/v1/machines")).json()).success).toBe(true);
+    expect(TotalsListSchema.safeParse((await get("/v1/operators")).json()).success).toBe(true);
+    expect(DeviceListSchema.safeParse((await get("/v1/devices")).json()).success).toBe(true);
   });
 
   it("rejects unknown or out-of-range query parameters", async () => {

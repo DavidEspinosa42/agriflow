@@ -3,3 +3,9 @@ packages:
   - apps/*
   - scripts
 minimumReleaseAge: 10080
+# Install scripts are not needed: esbuild ships prebuilt binaries and the others have fallbacks.
+allowBuilds:
+  "@parcel/watcher": false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false

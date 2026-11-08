@@ -25,10 +25,10 @@
     "vitest": "5.0.5"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && pnpm --filter @agriflow/dashboard typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "test": "vitest run",
+    "test": "vitest run && pnpm --filter @agriflow/dashboard test",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
     "seed": "node --env-file-if-exists=.env scripts/seed.ts",

@@ -10,6 +10,7 @@ import {
   initialState,
   isAuthorizationValid,
   isPlausibleFlow,
+  type Notice,
   pulsesToLiters,
   pumpEnabled,
   recover,
@@ -19,6 +20,7 @@ import {
   SessionRecord,
   type SessionState,
   type Settings,
+  type Snapshot,
   TankId,
 } from "@agriflow/core";
 import type { Hardware } from "../hardware/interfaces.ts";
@@ -36,23 +38,7 @@ export interface DispensingServiceOptions {
   readonly newId?: () => string;
 }
 
-export type Notice =
-  | { readonly kind: "none" }
-  | { readonly kind: "denied"; readonly reason: DenyReason }
-  | { readonly kind: "lapsed" }
-  | { readonly kind: "fault"; readonly reason: string };
-
-/** What the operator screen shows. Contains no fob UIDs. */
-export interface Snapshot {
-  readonly phase: "idle" | "awaiting_machine" | "authorized" | "dispensing" | "finished";
-  readonly pumpOn: boolean;
-  readonly estopEngaged: boolean;
-  readonly operatorId: string | null;
-  readonly machineId: string | null;
-  readonly liters: number;
-  readonly endReason: string | null;
-  readonly notice: Notice;
-}
+export type { Notice, Snapshot } from "@agriflow/core";
 
 const PLAUSIBILITY_WINDOW_MS = 1000;
 

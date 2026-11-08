@@ -4,6 +4,7 @@
     "packages/*/src",
     "apps/controller/src",
     "apps/server/src",
+    "apps/dashboard/projects/shared/src",
     "scripts",
     "vitest.config.ts"
   ]

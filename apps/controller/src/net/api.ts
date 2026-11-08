@@ -1,17 +1,9 @@
+import { ClientCommand } from "@agriflow/core";
 import websocket from "@fastify/websocket";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { SimulatedHardware } from "../hardware/simulator.ts";
 import type { ControllerRuntime } from "../service/runtime.ts";
-
-/** Commands the operator screen may send. Scans come only from the reader hardware. */
-export const ClientCommand = z.discriminatedUnion("type", [
-  z.strictObject({ type: z.literal("select_machine"), equipmentNumber: z.string().min(1).max(32) }),
-  z.strictObject({ type: z.literal("start") }),
-  z.strictObject({ type: z.literal("stop") }),
-  z.strictObject({ type: z.literal("dismiss") }),
-]);
-export type ClientCommand = z.infer<typeof ClientCommand>;
 
 export interface ApiOptions {
   readonly runtime: ControllerRuntime;
