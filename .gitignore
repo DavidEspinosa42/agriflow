@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.angular/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+data/
+backups/
+.DS_Store
