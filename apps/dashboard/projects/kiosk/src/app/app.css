@@ -1,0 +1,190 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s;
+}
+
+/* The page colour tells the state from across the yard: green is fueling, amber is ready. */
+.screen[data-mode="authorized"] {
+  background: var(--ready-bg);
+}
+.screen[data-mode="dispensing"] {
+  background: var(--go-bg);
+}
+.screen[data-mode="stopped"] {
+  background: var(--stop-bg);
+}
+
+.banner {
+  padding: 1rem 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  text-align: center;
+}
+.banner.offline {
+  background: var(--warn);
+  color: var(--on-warn);
+}
+.banner.notice {
+  background: var(--notice);
+  color: var(--on-notice);
+}
+.banner.estop {
+  background: var(--stop);
+  color: var(--on-stop);
+  font-size: 1.75rem;
+}
+
+.panel {
+  flex: 1;
+  width: min(100%, 60rem);
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.panel.center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+  line-height: 1.1;
+}
+.hint {
+  margin: 0;
+  font-size: 1.75rem;
+  color: var(--muted);
+}
+.label {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--muted);
+}
+
+.fob {
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  border: 0.9rem solid var(--text);
+  position: relative;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+.fob::after {
+  content: "";
+  position: absolute;
+  inset: 1.4rem;
+  border-radius: 50%;
+  background: var(--text);
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fob {
+    animation: none;
+  }
+}
+
+.liters {
+  font-size: clamp(5rem, 22vw, 11rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts {
+  display: flex;
+  gap: 3rem;
+  margin: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.facts dt {
+  font-size: 1.25rem;
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.pump {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pump.on {
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+.big {
+  min-width: 15rem;
+  min-height: 6.5rem;
+  padding: 0 2.5rem;
+  font: inherit;
+  font-size: 2.5rem;
+  font-weight: 800;
+  border-radius: 1.25rem;
+  border: 3px solid var(--text);
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface);
+}
+.big.go {
+  background: var(--go);
+  border-color: var(--go);
+  color: var(--on-go);
+}
+.big.stop {
+  background: var(--stop);
+  border-color: var(--stop);
+  color: var(--on-stop);
+  min-width: 24rem;
+  min-height: 8rem;
+}
+.big.quiet {
+  font-weight: 600;
+}
+.big:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.big:focus-visible {
+  outline: 4px solid var(--text);
+  outline-offset: 3px;
+}

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
@@ -91,6 +91,14 @@ async function connect() {
   return { ws, messages, next };
 }
 
+const fakeService = {
+  selectMachine: () => undefined,
+  start: () => undefined,
+  stop: () => undefined,
+  dismiss: () => undefined,
+  snapshot: () => ({}),
+};
+
 describe("controller API", () => {
   it("reports health and the current state", async () => {
     expect((await app.inject("/v1/health")).json()).toEqual({ status: "ok" });
@@ -152,5 +160,30 @@ describe("controller API", () => {
     const res = await app.inject({ method: "POST", url: "/dev/scan", payload: { uid: FOB } });
     expect(res.statusCode).toBe(200);
     expect((await app.inject("/v1/state")).json()).toMatchObject({ phase: "awaiting_machine" });
+  });
+
+  it("serves the kiosk build with security headers, next to the API", async () => {
+    const root = join(dir, "kiosk");
+    mkdirSync(root);
+    writeFileSync(join(root, "index.html"), "<!doctype html><title>kiosk</title>");
+    writeFileSync(join(dir, "secret.txt"), "not for the browser");
+    const web = await buildApi({
+      runtime,
+      service: { ...fakeService },
+      allowedOrigins: [],
+      staticRoot: root,
+    });
+    await web.ready();
+    const page = await web.inject("/");
+    expect(page.statusCode).toBe(200);
+    expect(page.body).toContain("<title>kiosk</title>");
+    expect(page.headers["content-security-policy"]).toContain("default-src 'self'");
+    expect(page.headers["x-content-type-options"]).toBe("nosniff");
+    expect((await web.inject("/v1/health")).json()).toEqual({ status: "ok" });
+    for (const url of ["/../secret.txt", "/%2e%2e/secret.txt", "/..%2fsecret.txt"]) {
+      const res = await web.inject(url);
+      expect(res.body, url).not.toContain("not for the browser");
+    }
+    await web.close();
   });
 });

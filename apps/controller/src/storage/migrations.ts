@@ -77,4 +77,10 @@ export const migrations: readonly string[] = [
     next_attempt_at_ms INTEGER NOT NULL
   ) STRICT;
   `,
+  // Equipment numbers are matched ignoring case, so they must also be unique ignoring case.
+  // No installation exists yet; a database with colliding numbers fails here, loudly, and the
+  // numbers must be fixed by hand rather than silently merging two machines.
+  `
+  CREATE UNIQUE INDEX machines_equipment_number_ci ON machines (upper(equipment_number));
+  `,
 ];

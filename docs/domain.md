@@ -59,3 +59,5 @@ During an internet outage, operator `op-0007` presents fob `04A1B2C3` and enters
 returns, the controller uploads it. The server stores one transaction and acknowledges.
 The session becomes `acked`. A repeated upload of the same session ID changes nothing.
 `pnpm seed` reproduces this scenario with dummy data.
+
+Equipment numbers are matched ignoring case, because the kiosk keypad enters capitals.

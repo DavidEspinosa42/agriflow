@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { createHardware, gpioConfigFromEnv, parseDriver } from "./hardware/factory.ts";
 import { SimulatedHardware } from "./hardware/simulator.ts";
@@ -30,6 +32,8 @@ const Env = z.object({
   ALLOWED_ORIGINS: z.string().default(""),
   SYNC_SERVER_URL: optional(z.url()),
   CONTROLLER_DEVICE_TOKEN: optional(secret(16)),
+  /** Built kiosk app. Defaults to the dashboard build in this repository. */
+  KIOSK_DIST: z.string().optional(),
   SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(1).default(10),
 });
 
@@ -124,14 +128,20 @@ try {
     `http://localhost:${env.CONTROLLER_PORT}`,
     ...env.ALLOWED_ORIGINS.split(",").filter((o) => o !== ""),
   ];
+  const kioskDist =
+    env.KIOSK_DIST ?? fileURLToPath(new URL("../../dashboard/dist/kiosk/browser", import.meta.url));
+  const serveKiosk = existsSync(kioskDist);
   const server = await buildApi({
     runtime,
     service,
     allowedOrigins: origins,
     logger: true,
+    ...(serveKiosk ? { staticRoot: kioskDist } : {}),
     ...(hardware instanceof SimulatedHardware ? { simulator: hardware } : {}),
   });
   app = server;
+
+  if (!serveKiosk) server.log.warn(`no kiosk build at ${kioskDist}; run the dashboard build`);
 
   if (env.SYNC_SERVER_URL !== undefined && env.CONTROLLER_DEVICE_TOKEN !== undefined) {
     const worker = new SyncWorker({

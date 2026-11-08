@@ -320,6 +320,10 @@ describe("reference data and settings", () => {
       store.upsertMachine(machine);
       expect(store.findCredential(credential.credentialRef)).toEqual(credential);
       expect(store.findMachineByEquipmentNumber("T-12")).toEqual(machine);
+      expect(store.findMachineByEquipmentNumber("t-12")).toEqual(machine);
+      expect(() =>
+        store.upsertMachine({ machineId: "m9", equipmentNumber: "t-12", active: true } as Machine),
+      ).toThrow();
       expect(store.findCredential("b".repeat(64))).toBeUndefined();
       store.upsertCredential({ ...credential, revoked: true });
       expect(store.findCredential(credential.credentialRef)?.revoked).toBe(true);

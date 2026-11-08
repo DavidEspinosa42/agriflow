@@ -1,1 +1,56 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  color-scheme: light dark;
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --text: #14211a;
+  --muted: #4b5a52;
+  --border: #9aa79f;
+  --go: #1b7a3a;
+  --on-go: #ffffff;
+  --go-bg: #dff3e4;
+  --ready-bg: #fbefc9;
+  --stop: #b3261e;
+  --on-stop: #ffffff;
+  --stop-bg: #f7d9d6;
+  --warn: #f2c230;
+  --on-warn: #1a1500;
+  --notice: #14211a;
+  --on-notice: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101713;
+    --surface: #1b251f;
+    --text: #f2f5f0;
+    --muted: #b4c0b8;
+    --border: #5a6b61;
+    --go: #3fbf68;
+    --on-go: #04140a;
+    --go-bg: #123a22;
+    --ready-bg: #3a3010;
+    --stop: #ff6a5f;
+    --on-stop: #230302;
+    --stop-bg: #44171a;
+    --warn: #f2c230;
+    --on-warn: #1a1500;
+    --notice: #f2f5f0;
+    --on-notice: #101713;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  /* A kiosk is not scrolled or zoomed; pressing and holding must not select text. */
+  user-select: none;
+  touch-action: manipulation;
+}

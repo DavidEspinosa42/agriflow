@@ -1,4 +1,5 @@
 import { ClientCommand } from "@agriflow/core";
+import fastifyStatic from "@fastify/static";
 import websocket from "@fastify/websocket";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -23,6 +24,8 @@ export interface ApiOptions {
    * the controller. Connections without an Origin header (not from a browser) are allowed.
    */
   readonly allowedOrigins: readonly string[];
+  /** Folder with the built kiosk app to serve at "/". Omitted in tests and API-only runs. */
+  readonly staticRoot?: string;
   readonly logger?: boolean;
 }
 
@@ -35,7 +38,19 @@ export async function buildApi(options: ApiOptions): Promise<FastifyInstance> {
   const { runtime, service, simulator } = options;
   const app = Fastify({ logger: options.logger ?? false });
   const allowed = new Set(options.allowedOrigins);
+  // The kiosk loads nothing from elsewhere and talks only to this controller.
+  app.addHook("onRequest", async (_request, reply) => {
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("referrer-policy", "no-referrer");
+    reply.header(
+      "content-security-policy",
+      "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; frame-ancestors 'none'",
+    );
+  });
   await app.register(websocket, { options: { maxPayload: 1024 } });
+  if (options.staticRoot !== undefined) {
+    await app.register(fastifyStatic, { root: options.staticRoot });
+  }
 
   app.get("/v1/health", async () => ({ status: "ok" }));
   app.get("/v1/state", async () => service.snapshot());

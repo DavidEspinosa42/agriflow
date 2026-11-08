@@ -159,7 +159,8 @@ export class ControllerStore {
 
   findMachineByEquipmentNumber(equipmentNumber: string): Machine | undefined {
     const row = this.#db
-      .prepare("SELECT * FROM machines WHERE equipment_number = ?")
+      // Equipment numbers are matched ignoring case: the kiosk keypad has no lowercase keys.
+      .prepare("SELECT * FROM machines WHERE upper(equipment_number) = upper(?)")
       .get(equipmentNumber) as Row | undefined;
     if (row === undefined) return undefined;
     return MachineSchema.parse({
