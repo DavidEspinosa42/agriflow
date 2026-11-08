@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   ConsumptionReportSchema,
   DeviceListSchema,
@@ -213,5 +216,21 @@ describe("manager read API", () => {
     ]) {
       expect((await get(url)).statusCode, url).toBe(400);
     }
+  });
+});
+
+describe("static dashboard", () => {
+  it("serves the built manager app with security headers next to the API", async () => {
+    const root = mkdtempSync(join(tmpdir(), "agriflow-web-"));
+    writeFileSync(join(root, "index.html"), "<!doctype html><title>manager</title>");
+    const web = buildApp({ repository: new MemoryRepository(), now: () => 1, staticRoot: root });
+    const page = await web.inject("/");
+    expect(page.statusCode).toBe(200);
+    expect(page.body).toContain("manager");
+    expect(page.headers["content-security-policy"]).toContain("default-src 'self'");
+    expect((await web.inject("/v1/health")).json()).toEqual({ status: "ok" });
+    expect((await web.inject("/v1/transactions")).statusCode).toBe(401);
+    await web.close();
+    rmSync(root, { recursive: true, force: true });
   });
 });

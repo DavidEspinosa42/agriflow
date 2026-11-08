@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { createHardware, gpioConfigFromEnv, parseDriver } from "./hardware/factory.ts";
@@ -128,8 +129,10 @@ try {
     `http://localhost:${env.CONTROLLER_PORT}`,
     ...env.ALLOWED_ORIGINS.split(",").filter((o) => o !== ""),
   ];
-  const kioskDist =
-    env.KIOSK_DIST ?? fileURLToPath(new URL("../../dashboard/dist/kiosk/browser", import.meta.url));
+  // @fastify/static requires an absolute root.
+  const kioskDist = resolve(
+    env.KIOSK_DIST ?? fileURLToPath(new URL("../../dashboard/dist/kiosk/browser", import.meta.url)),
+  );
   const serveKiosk = existsSync(kioskDist);
   const server = await buildApi({
     runtime,

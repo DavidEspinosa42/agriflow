@@ -1,4 +1,5 @@
 import { SyncRequest, type SyncResponse } from "@agriflow/core";
+import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import { hashToken, type SyncRepository } from "../db/repository.ts";
@@ -9,6 +10,8 @@ export interface AppOptions {
   readonly now: () => number;
   /** Minutes east of UTC used to bucket days in reports. Argentina is -180. */
   readonly utcOffsetMinutes?: number;
+  /** Folder with the built manager dashboard, served at "/". */
+  readonly staticRoot?: string;
   readonly logger?: boolean;
 }
 
@@ -55,6 +58,19 @@ export function buildApp(options: AppOptions): FastifyInstance {
   const { repository, now } = options;
   const defaultOffset = options.utcOffsetMinutes ?? -180;
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: BODY_LIMIT_BYTES });
+
+  app.addHook("onRequest", async (_request, reply) => {
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("referrer-policy", "no-referrer");
+    reply.header(
+      "content-security-policy",
+      "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'",
+    );
+  });
+  if (options.staticRoot !== undefined) {
+    // Registered lazily by Fastify; the dashboard is same-origin, so no CORS is needed.
+    void app.register(fastifyStatic, { root: options.staticRoot });
+  }
 
   // Never leak internal error details to clients.
   app.setErrorHandler((error, request, reply) => {
