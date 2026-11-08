@@ -4,3 +4,4 @@ export * from "./lib/metering.ts";
 export * from "./lib/schemas.ts";
 export * from "./lib/session.ts";
 export * from "./lib/settings.ts";
+export * from "./lib/sync.ts";
