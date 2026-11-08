@@ -1,0 +1,12 @@
+{
+  "name": "agriflow",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first diesel dispensing authorization and audit for farm fuel tanks.",
+  "license": "MIT",
+  "devEngines": {
+    "runtime": { "name": "node", "version": "26.13.0", "onFail": "error" },
+    "packageManager": { "name": "pnpm", "version": "12.16.1", "onFail": "error" }
+  }
+}
