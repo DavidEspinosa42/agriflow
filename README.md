@@ -10,6 +10,21 @@ liters and records the session locally, even without internet, then syncs it to 
 - **Operators** refuel at a Raspberry Pi station with a rugged touchscreen, wearing gloves.
 - **Managers** review transactions and consumption in an Angular dashboard from a computer or phone.
 
+## Screenshots
+
+Captured from the running system with the simulator and dummy data (`pnpm seed`). The kiosk is
+shown at 1024×600, a typical 7 inch touchscreen. The interface is in Spanish; add `?lang=en` for English.
+
+| Present the fob                                | Enter the equipment                                | Ready                                            |
+| ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| ![Kiosk idle](docs/screenshots/kiosk-idle.png) | ![Kiosk keypad](docs/screenshots/kiosk-keypad.png) | ![Kiosk ready](docs/screenshots/kiosk-ready.png) |
+
+| Fueling                                                 | Finished                                               |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| ![Kiosk fueling](docs/screenshots/kiosk-dispensing.png) | ![Kiosk finished](docs/screenshots/kiosk-finished.png) |
+
+![Manager dashboard](docs/screenshots/manager-dashboard.png)
+
 ## Architecture
 
 ```mermaid
@@ -20,14 +35,14 @@ flowchart LR
     HAL[Hardware abstraction] --> Svc[Dispensing service]
     Svc --> SQLite[(SQLite ledger)]
     Svc --> Outbox[Sync outbox]
-    UI[Operator kiosk UI] <--> Svc
+    Kiosk[Operator kiosk, Angular] <-- WebSocket --> Svc
   end
   HAL --> Relay[Pump relay]
   Meter[Flow meter] --> HAL
   Estop[Hardware E-stop] -. cuts power .-> Relay
-  Outbox -- authenticated API, retries --> API[Central server]
+  Outbox -- "idempotent upload, retries" --> API[Central server]
   API --> MySQL[(MySQL)]
-  Dash[Manager dashboard] --> API
+  Dash[Manager dashboard, Angular] --> API
 ```
 
 Two rules hold throughout: the pump is enabled only by a valid local authorization and is disabled
@@ -64,30 +79,45 @@ The controller uses a local SQLite file (`CONTROLLER_DB_PATH`). The central serv
 controller (see [ROADMAP](ROADMAP.md)).
 
 The MySQL tests are opt-in: set `MYSQL_TEST_URL` to a throwaway database whose name ends in `_test`
-(see [ADR 0002](docs/adr/0002-mysql-central.md)). Without it they are skipped and the in-memory
+(see [ADR 0002](docs/adr/0002-mysql-for-central-records.md)). Without it they are skipped and the in-memory
 repository tests still run. `MYSQL_E2E_URL` (a database ending in `_e2e_test`) additionally runs
 the offline-outage end-to-end test against MySQL.
 
 ## Usage
 
-Development runs on Windows with simulated hardware (`HARDWARE_DRIVER=simulator`). The same
-controller code runs on the Raspberry Pi (`HARDWARE_DRIVER=gpio`) with the pump relay, flow meter,
-E-stop monitor and buttons on GPIO through libgpiod v2 (`apt install gpiod`) and the USB reader read
-from its input device (see [ADR 0005](docs/adr/0005-hardware-abstraction-with-simulators.md) and
-[ADR 0006](docs/adr/0006-usb-keyboard-wedge-rfid-reader.md)).
+### Run it on a development machine
+
+Development runs on Windows (or any OS) with simulated hardware. A MySQL instance is needed for the
+central server (see [ADR 0002](docs/adr/0002-mysql-for-central-records.md) for a one-line Docker command).
 
 ```bash
-node --env-file=.env apps/server/src/main.ts       # central server
-node --env-file=.env apps/controller/src/main.ts   # pump controller
+pnpm install
+cp .env.example .env                             # then set FOB_SALT and DATABASE_URL
+pnpm migrate                                     # controller (SQLite) and server (MySQL) schemas
+pnpm seed --server --history 30                  # demo data; prints one-time demo tokens
+pnpm --filter @agriflow/dashboard build          # builds the kiosk and the manager dashboard
+node --env-file=.env apps/server/src/main.ts     # server and manager dashboard on :4000
+node --env-file=.env apps/controller/src/main.ts # controller and kiosk on :4100
 ```
 
-With the simulator, `POST /dev/scan {"uid": "04A1B2C3"}` on the controller plays a fob scan. Administration is by CLI
-scripts in v1. Copy `.env.example` to `.env` and set `FOB_SALT` first.
+Open `http://127.0.0.1:4100` for the kiosk and `http://127.0.0.1:4000` for the manager dashboard
+(sign in with the manager token printed by the seed). With the simulator, `POST /dev/scan` with
+`{"uid": "04A1B2C3"}` on the controller plays a fob scan; then enter `T-12` on the keypad. Set
+`SYNC_SERVER_URL` and `CONTROLLER_DEVICE_TOKEN` to upload sessions to the server.
+
+### Run it on a Raspberry Pi
+
+Set `HARDWARE_DRIVER=gpio` and the `GPIO_*` and `RFID_DEVICE` variables, install libgpiod v2
+(`apt install gpiod`) and add the service user to the `input` group. See
+[ADR 0005](docs/adr/0005-hardware-abstraction-with-simulators.md) and
+[ADR 0006](docs/adr/0006-usb-keyboard-wedge-rfid.md) for the wiring rules. The relay circuit must fail
+off in hardware, and the GPIO driver must be bench tested before any real use (see the roadmap).
+
+### Administration
+
+Administration is by CLI scripts in v1.
 
 ```bash
-pnpm migrate                                   # controller (SQLite) and server (MySQL) schemas
-pnpm seed                                      # demo machines and operators on the controller
-pnpm seed --server --history 30                # also demo devices, tokens and 30 days of history
 pnpm enroll-fob --operator op-0007             # then present the fob; only its salted hash is stored
 pnpm issue-token device --id pump-01 --tank tank-1
 pnpm issue-token manager --id mgr-1            # tokens are printed once; only hashes are stored
@@ -96,13 +126,27 @@ pnpm backup                                    # verified online backup of the c
 
 ## API
 
+Central server (`apps/server`). Manager endpoints need a manager bearer token; the sync endpoint
+needs a device token.
+
 | Method | Path                      | Purpose                                                                    |
 | ------ | ------------------------- | -------------------------------------------------------------------------- |
 | POST   | `/v1/sync/sessions`       | Controller uploads finalized sessions; returns per-session acknowledgments |
 | GET    | `/v1/health`              | Liveness                                                                   |
-| GET    | `/v1/transactions`        | Manager: list transactions                                                 |
-| GET    | `/v1/machines`            | Manager: list machines                                                     |
-| GET    | `/v1/reports/consumption` | Manager: consumption totals                                                |
+| GET    | `/v1/transactions`        | Manager: transactions, newest first, with filters and paging               |
+| GET    | `/v1/reports/consumption` | Manager: liters and sessions by day, machine, operator or device           |
+| GET    | `/v1/machines`            | Manager: liters per machine                                                |
+| GET    | `/v1/operators`           | Manager: liters per operator                                               |
+| GET    | `/v1/devices`             | Manager: controllers with last sync time                                   |
+
+Controller (`apps/controller`), listening on the loopback interface for the kiosk.
+
+| Method | Path         | Purpose                                                                                   |
+| ------ | ------------ | ----------------------------------------------------------------------------------------- |
+| GET    | `/ws`        | WebSocket: live state to the kiosk; commands `select_machine`, `start`, `stop`, `dismiss` |
+| GET    | `/v1/state`  | Current state snapshot                                                                    |
+| GET    | `/v1/health` | Liveness                                                                                  |
+| POST   | `/dev/scan`  | Simulator only: play a fob scan                                                           |
 
 ## Documentation
 
@@ -111,6 +155,7 @@ pnpm backup                                    # verified online backup of the c
 - [docs/domain.md](docs/domain.md) glossary, rules, reference scenario
 - [docs/landscape.md](docs/landscape.md) alternatives
 - [docs/adr/](docs/adr/) architecture decisions
+- [.github/workflows/ci.yml](.github/workflows/ci.yml) CI: typecheck, lint, tests with MySQL, dashboard build
 
 ## Data policy
 

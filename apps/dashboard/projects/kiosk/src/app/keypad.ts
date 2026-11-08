@@ -68,6 +68,14 @@ const MAX_LENGTH = 16;
     .key.confirm { background: var(--go); border-color: var(--go); color: var(--on-go); }
     .key.confirm:disabled { background: var(--surface); color: var(--text); border-color: var(--border); }
     .actions { margin-top: 0.5rem; }
+    @media (max-height: 700px) {
+      .display { min-height: 3.75rem; font-size: 2.5rem; margin-bottom: 0.5rem; }
+      .keys { gap: 0.375rem; }
+      .row { gap: 0.375rem; }
+      .key { min-height: 3.75rem; font-size: 1.5rem; }
+      .key.wide { font-size: 1.25rem; }
+      .actions { margin-top: 0.25rem; }
+    }
   `,
 })
 export class Keypad {

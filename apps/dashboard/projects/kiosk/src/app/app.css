@@ -112,7 +112,7 @@ h1 {
 }
 
 .liters {
-  font-size: clamp(5rem, 22vw, 11rem);
+  font-size: clamp(4rem, min(22vw, 26vh), 11rem);
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -187,4 +187,30 @@ h1 {
 .big:focus-visible {
   outline: 4px solid var(--text);
   outline-offset: 3px;
+}
+
+/* A 7 inch 1024x600 touchscreen: keep every screen inside the viewport. */
+@media (max-height: 700px) {
+  .panel {
+    padding: 1rem 1.5rem;
+    gap: 0.75rem;
+  }
+  .facts dd {
+    font-size: 1.75rem;
+  }
+  .big {
+    min-height: 5rem;
+    font-size: 2rem;
+  }
+  .big.stop {
+    min-height: 6rem;
+  }
+  .fob {
+    width: 6rem;
+    height: 6rem;
+    border-width: 0.6rem;
+  }
+  .fob::after {
+    inset: 1rem;
+  }
 }
