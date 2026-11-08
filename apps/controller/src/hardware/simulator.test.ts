@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { createHardware, parseDriver } from "./factory.ts";
+import { createHardware, gpioConfigFromEnv, parseDriver } from "./factory.ts";
 import { SimulatedHardware } from "./simulator.ts";
 
 describe("SimulatedHardware", () => {
@@ -91,9 +91,33 @@ describe("SimulatedHardware", () => {
 describe("hardware factory", () => {
   it("creates the simulator and rejects unknown drivers", () => {
     expect(createHardware("simulator")).toBeInstanceOf(SimulatedHardware);
-    expect(() => createHardware("gpio")).toThrow(/not available/);
+    expect(() => createHardware("gpio")).toThrow(/GPIO_\* settings/);
     expect(parseDriver(undefined)).toBe("simulator");
     expect(parseDriver("gpio")).toBe("gpio");
     expect(() => parseDriver("usb")).toThrow(/HARDWARE_DRIVER/);
+  });
+
+  it("reads the GPIO wiring from the environment and rejects incomplete settings", () => {
+    const env = {
+      GPIO_RELAY: "17",
+      GPIO_METER: "27",
+      GPIO_ESTOP: "22",
+      GPIO_BUTTON_START: "23",
+      GPIO_BUTTON_STOP: "24",
+      RFID_DEVICE: "/dev/input/by-id/reader-event-kbd",
+    };
+    expect(gpioConfigFromEnv(env)).toMatchObject({
+      chip: "gpiochip0",
+      relayLine: 17,
+      meterLine: 27,
+      estopEngagedLevel: "high",
+    });
+    expect(() => gpioConfigFromEnv({ ...env, GPIO_RELAY: undefined })).toThrow(/GPIO_RELAY/);
+    expect(() => gpioConfigFromEnv({ ...env, GPIO_METER: "abc" })).toThrow(/GPIO_METER/);
+    for (const blank of ["", "  ", "-1", "1.5", "1e1"]) {
+      expect(() => gpioConfigFromEnv({ ...env, GPIO_RELAY: blank })).toThrow(/GPIO_RELAY/);
+    }
+    expect(() => gpioConfigFromEnv({ ...env, RFID_DEVICE: undefined })).toThrow(/RFID_DEVICE/);
+    expect(() => gpioConfigFromEnv({ ...env, GPIO_ESTOP_ENGAGED_LEVEL: "up" })).toThrow(/ENGAGED/);
   });
 });

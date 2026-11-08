@@ -70,7 +70,17 @@ repository tests still run.
 ## Usage
 
 Development runs on Windows with simulated hardware (`HARDWARE_DRIVER=simulator`). The same
-controller code runs on the Raspberry Pi with GPIO and the USB reader. Administration is by CLI
+controller code runs on the Raspberry Pi (`HARDWARE_DRIVER=gpio`) with the pump relay, flow meter,
+E-stop monitor and buttons on GPIO through libgpiod v2 (`apt install gpiod`) and the USB reader read
+from its input device (see [ADR 0005](docs/adr/0005-hardware-abstraction-with-simulators.md) and
+[ADR 0006](docs/adr/0006-usb-keyboard-wedge-rfid-reader.md)).
+
+```bash
+node --env-file=.env apps/server/src/main.ts       # central server
+node --env-file=.env apps/controller/src/main.ts   # pump controller
+```
+
+With the simulator, `POST /dev/scan {"uid": "04A1B2C3"}` on the controller plays a fob scan. Administration is by CLI
 scripts in v1. Copy `.env.example` to `.env` and set `FOB_SALT` first.
 
 ```bash

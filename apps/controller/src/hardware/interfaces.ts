@@ -40,6 +40,8 @@ export interface Hardware {
   readonly reader: RfidReader;
   readonly estop: EstopInput;
   readonly buttons: Buttons;
+  /** Resolves once every input reports a verified state. Start accepting input after this. */
+  ready?(): Promise<void>;
   /** Release pins and devices. The relay is commanded off first. */
   close(): void;
 }

@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { migrations } from "./migrations.ts";
 
@@ -6,6 +8,8 @@ import { migrations } from "./migrations.ts";
  * WAL with synchronous=FULL means a committed checkpoint survives a power cut.
  */
 export function openDatabase(path: string): DatabaseSync {
+  // SQLite creates the file but not its folder.
+  if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA synchronous = FULL");

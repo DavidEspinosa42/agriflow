@@ -19,6 +19,9 @@ Estimates are in hours.
 | Item                                                       | Hours |
 | ---------------------------------------------------------- | ----- |
 | GPIO relay and pulse-meter driver tested on a Raspberry Pi | 10    |
+| Hardware watchdog so the relay fails off by itself         | 6     |
+| Show degraded hardware (dead monitor) on the kiosk         | 3     |
+| Hardware pulse counter and settle step before finalizing   | 8     |
 | Meter calibration procedure and tooling                    | 6     |
 | systemd units, kiosk boot, pump-off default at boot        | 6     |
 | UPS and graceful shutdown handling                         | 6     |
@@ -49,7 +52,7 @@ Estimates are in hours.
 | Manager accounts and roles              | 10    |
 | Dependency and supply-chain audit in CI | 4     |
 
-**Total: 112 hours**
+**Total: 129 hours**
 
 ## Out of scope
 
