@@ -2,5 +2,15 @@
   "name": "@agriflow/server",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@agriflow/core": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "mysql2": "3.24.6",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11"
+  }
 }

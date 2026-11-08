@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1794147992765,
+      "tag": "0000_superb_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1794147998763,
+      "tag": "0001_append_only_triggers",
+      "breakpoints": true
+    }
+  ]
+}
