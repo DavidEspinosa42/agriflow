@@ -1,0 +1,5 @@
+ALTER TABLE `devices` MODIFY `device_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `tank_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `token_hash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;
+--> statement-breakpoint
+ALTER TABLE `managers` MODIFY `manager_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `token_hash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;
+--> statement-breakpoint
+ALTER TABLE `transactions` MODIFY `session_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `device_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `tank_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `operator_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `machine_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, MODIFY `end_reason` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;

@@ -1,6 +1,6 @@
 import type { SessionRecord } from "@agriflow/core";
 import { beforeEach, describe, expect, it } from "vitest";
-import { MemorySyncRepository } from "../db/repository.ts";
+import { MemoryRepository } from "../db/repository.ts";
 import { buildApp } from "./app.ts";
 
 const TOKEN = "device-token-0123456789abcdef";
@@ -20,11 +20,11 @@ const record = (sessionId: string, liters = 10): SessionRecord =>
     endReason: "operator_stop",
   }) as SessionRecord;
 
-let repo: MemorySyncRepository;
+let repo: MemoryRepository;
 let app: ReturnType<typeof buildApp>;
 
 beforeEach(() => {
-  repo = new MemorySyncRepository();
+  repo = new MemoryRepository();
   repo.addDevice({ deviceId: "pump-01", tankId: "tank-1" }, TOKEN);
   app = buildApp({ repository: repo, now: () => 5000 });
 });
@@ -88,15 +88,12 @@ describe("POST /v1/sync/sessions", () => {
   });
 
   it("does not leak internal errors", async () => {
-    const failing = buildApp({
-      repository: {
-        findDeviceByTokenHash: async () => ({ deviceId: "pump-01", tankId: "tank-1" }),
-        storeBatch: async () => {
-          throw new Error("secret connection string mysql://root:pw@host");
-        },
-      },
-      now: () => 1,
-    });
+    const failingRepo = new MemoryRepository();
+    failingRepo.addDevice({ deviceId: "pump-01", tankId: "tank-1" }, TOKEN);
+    failingRepo.storeBatch = async () => {
+      throw new Error("secret connection string mysql://root:pw@host");
+    };
+    const failing = buildApp({ repository: failingRepo, now: () => 1 });
     const res = await failing.inject({
       method: "POST",
       url: "/v1/sync/sessions",
@@ -109,5 +106,93 @@ describe("POST /v1/sync/sessions", () => {
 
   it("serves health", async () => {
     expect((await app.inject("/v1/health")).json()).toEqual({ status: "ok" });
+  });
+});
+
+describe("manager read API", () => {
+  const MANAGER = "manager-token-0123456789abcdef";
+  const get = (url: string, token: string | null = MANAGER) =>
+    app.inject({
+      method: "GET",
+      url,
+      headers: token === null ? {} : { authorization: `Bearer ${token}` },
+    });
+
+  beforeEach(async () => {
+    repo.addManager("mgr-1", MANAGER);
+    await post([
+      record(S1, 10),
+      { ...record(S2, 5), machineId: "m2", operatorId: "op-2", startedAtMs: 3000 },
+    ]);
+  });
+
+  it("requires a manager token; a device token is not enough", async () => {
+    for (const url of [
+      "/v1/transactions",
+      "/v1/reports/consumption",
+      "/v1/machines",
+      "/v1/operators",
+      "/v1/devices",
+    ]) {
+      expect((await get(url, null)).statusCode).toBe(401);
+      expect((await get(url, "wrong-token-0123456789abcdef")).statusCode).toBe(401);
+      expect((await get(url, TOKEN)).statusCode).toBe(401);
+    }
+  });
+
+  it("lists transactions newest first with paging and filters", async () => {
+    const all = (await get("/v1/transactions")).json();
+    expect(all.total).toBe(2);
+    expect(all.items.map((i: { sessionId: string }) => i.sessionId)).toEqual([S2, S1]);
+    expect(all.items[0].receivedAtMs).toBe(5000);
+
+    const page = (await get("/v1/transactions?limit=1&offset=1")).json();
+    expect(page.items.map((i: { sessionId: string }) => i.sessionId)).toEqual([S1]);
+    expect(page.total).toBe(2);
+
+    const filtered = (await get("/v1/transactions?machineId=m2")).json();
+    expect(filtered.items).toHaveLength(1);
+  });
+
+  it("reports consumption grouped by day, machine and operator", async () => {
+    const byMachine = (await get("/v1/reports/consumption?groupBy=machine")).json();
+    expect(byMachine).toEqual({
+      groupBy: "machine",
+      rows: [
+        { key: "m1", liters: 10, sessions: 1 },
+        { key: "m2", liters: 5, sessions: 1 },
+      ],
+    });
+    const byDay = (await get("/v1/reports/consumption")).json();
+    expect(byDay.groupBy).toBe("day");
+    expect(byDay.rows).toEqual([{ key: "1969-12-31", liters: 15, sessions: 2 }]);
+    const local = (await get("/v1/reports/consumption?utcOffsetMinutes=0")).json();
+    expect(local.rows).toEqual([{ key: "1970-01-01", liters: 15, sessions: 2 }]);
+  });
+
+  it("lists machines, operators and device status", async () => {
+    expect((await get("/v1/machines")).json().items.map((i: { key: string }) => i.key)).toEqual([
+      "m1",
+      "m2",
+    ]);
+    expect((await get("/v1/operators")).json().items).toHaveLength(2);
+    expect((await get("/v1/devices")).json().items).toEqual([
+      { deviceId: "pump-01", tankId: "tank-1", sessions: 2, lastReceivedAtMs: 5000 },
+    ]);
+  });
+
+  it("rejects unknown or out-of-range query parameters", async () => {
+    for (const url of [
+      "/v1/transactions?limit=0",
+      "/v1/transactions?limit=1000",
+      "/v1/transactions?offset=-1",
+      "/v1/transactions?bogus=1",
+      "/v1/transactions?from=abc",
+      "/v1/reports/consumption?groupBy=tank",
+      "/v1/reports/consumption?utcOffsetMinutes=9999",
+      "/v1/machines?machineId=x",
+    ]) {
+      expect((await get(url)).statusCode, url).toBe(400);
+    }
   });
 });

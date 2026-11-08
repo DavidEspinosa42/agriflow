@@ -32,3 +32,11 @@ export const transactions = mysqlTable(
     index("transactions_machine_idx").on(t.machineId),
   ],
 );
+
+/** A manager allowed to read reports. Only a hash of the token is stored. */
+export const managers = mysqlTable("managers", {
+  managerId: varchar("manager_id", { length: 64 }).primaryKey(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  revoked: boolean("revoked").notNull().default(false),
+  createdAtMs: bigint("created_at_ms", { mode: "number" }).notNull(),
+});

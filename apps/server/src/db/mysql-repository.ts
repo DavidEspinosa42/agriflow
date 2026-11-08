@@ -1,8 +1,22 @@
 import { SessionRecord, type SyncAck, sameRecord } from "@agriflow/core";
-import { and, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lt, max, type SQL, sql, sum } from "drizzle-orm";
 import type { MySql2Database } from "drizzle-orm/mysql2";
+import {
+  type ConsumptionRow,
+  type DeviceStatus,
+  dayKey,
+  type GroupBy,
+  MS_PER_DAY,
+  MS_PER_MINUTE,
+  type Page,
+  type ReportRepository,
+  roundLiters,
+  type StoredTransaction,
+  sortConsumption,
+  type TransactionFilter,
+} from "../reports/reports.ts";
 import type { DeviceInfo, SyncRepository } from "./repository.ts";
-import { devices, transactions } from "./schema.ts";
+import { devices, managers, transactions } from "./schema.ts";
 
 const ER_DUP_ENTRY = 1062;
 
@@ -15,7 +29,7 @@ export function isDuplicateKey(error: unknown): boolean {
   return false;
 }
 
-export class MysqlSyncRepository implements SyncRepository {
+export class MysqlRepository implements SyncRepository, ReportRepository {
   readonly #db: MySql2Database;
 
   constructor(db: MySql2Database) {
@@ -64,4 +78,105 @@ export class MysqlSyncRepository implements SyncRepository {
       return acks;
     });
   }
+
+  async findManagerByTokenHash(tokenHash: string): Promise<{ managerId: string } | undefined> {
+    const rows = await this.#db
+      .select({ managerId: managers.managerId })
+      .from(managers)
+      .where(and(eq(managers.tokenHash, tokenHash), eq(managers.revoked, false)))
+      .limit(1);
+    return rows[0];
+  }
+
+  async listTransactions(
+    filter: TransactionFilter,
+    page: Page,
+  ): Promise<{ items: StoredTransaction[]; total: number }> {
+    const where = and(...conditions(filter));
+    const [items, totals] = await Promise.all([
+      this.#db
+        .select()
+        .from(transactions)
+        .where(where)
+        .orderBy(desc(transactions.startedAtMs), asc(transactions.sessionId))
+        .limit(page.limit)
+        .offset(page.offset),
+      this.#db.select({ total: count() }).from(transactions).where(where),
+    ]);
+    return {
+      items: items.map((row) => ({
+        ...SessionRecord.parse(withoutReceived(row)),
+        receivedAtMs: row.receivedAtMs,
+      })),
+      total: totals[0]?.total ?? 0,
+    };
+  }
+
+  async consumption(
+    filter: TransactionFilter,
+    groupBy: GroupBy,
+    utcOffsetMinutes: number,
+  ): Promise<ConsumptionRow[]> {
+    const key: SQL =
+      groupBy === "machine"
+        ? sql`${transactions.machineId}`
+        : groupBy === "operator"
+          ? sql`${transactions.operatorId}`
+          : groupBy === "device"
+            ? sql`${transactions.deviceId}`
+            : sql`CAST(FLOOR((${transactions.startedAtMs} + ${utcOffsetMinutes * MS_PER_MINUTE}) / ${MS_PER_DAY}) AS SIGNED)`;
+    const rows = await this.#db
+      .select({
+        key: sql<string>`${key}`.as("group_key"),
+        liters: sum(transactions.liters),
+        sessions: count(),
+      })
+      .from(transactions)
+      .where(and(...conditions(filter)))
+      .groupBy(sql`group_key`);
+    return sortConsumption(
+      rows.map((row) => ({
+        key: groupBy === "day" ? dayKey(Number(row.key)) : String(row.key),
+        liters: roundLiters(Number(row.liters ?? 0)),
+        sessions: Number(row.sessions),
+      })),
+      groupBy,
+    );
+  }
+
+  async deviceStatus(): Promise<DeviceStatus[]> {
+    const rows = await this.#db
+      .select({
+        deviceId: devices.deviceId,
+        tankId: devices.tankId,
+        sessions: count(transactions.sessionId),
+        lastReceivedAtMs: max(transactions.receivedAtMs),
+      })
+      .from(devices)
+      .leftJoin(transactions, eq(transactions.deviceId, devices.deviceId))
+      .where(eq(devices.revoked, false))
+      .groupBy(devices.deviceId, devices.tankId)
+      .orderBy(asc(devices.deviceId));
+    return rows.map((row) => ({
+      deviceId: row.deviceId,
+      tankId: row.tankId,
+      sessions: Number(row.sessions),
+      lastReceivedAtMs: row.lastReceivedAtMs === null ? null : Number(row.lastReceivedAtMs),
+    }));
+  }
+}
+
+function conditions(filter: TransactionFilter): SQL[] {
+  const out: SQL[] = [];
+  if (filter.fromMs !== undefined) out.push(gte(transactions.startedAtMs, filter.fromMs));
+  if (filter.toMs !== undefined) out.push(lt(transactions.startedAtMs, filter.toMs));
+  if (filter.machineId !== undefined) out.push(eq(transactions.machineId, filter.machineId));
+  if (filter.operatorId !== undefined) out.push(eq(transactions.operatorId, filter.operatorId));
+  if (filter.deviceId !== undefined) out.push(eq(transactions.deviceId, filter.deviceId));
+  return out;
+}
+
+function withoutReceived<T extends { receivedAtMs: number }>(row: T): Omit<T, "receivedAtMs"> {
+  const { receivedAtMs: _ignored, ...rest } = row;
+  return rest;
 }
