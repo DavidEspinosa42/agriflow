@@ -6,7 +6,29 @@
   "description": "Offline-first diesel dispensing authorization and audit for farm fuel tanks.",
   "license": "MIT",
   "devEngines": {
-    "runtime": { "name": "node", "version": "26.13.0", "onFail": "error" },
-    "packageManager": { "name": "pnpm", "version": "12.16.1", "onFail": "error" }
+    "runtime": {
+      "name": "node",
+      "version": "26.13.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.16.1",
+      "onFail": "error"
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "26.6.6",
+    "fast-check": "4.10.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm lint && pnpm test"
   }
 }

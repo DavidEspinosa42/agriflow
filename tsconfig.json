@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "packages/*/src",
+    "apps/controller/src",
+    "apps/server/src",
+    "scripts",
+    "vitest.config.ts"
+  ]
+}
