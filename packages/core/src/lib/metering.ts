@@ -25,10 +25,14 @@ export function pulsesToLiters(pulses: number, settings: Pick<Settings, "litersP
   return pulses * settings.litersPerPulse;
 }
 
-/** Flow rate in liters per minute over an interval. Zero for an empty or reversed interval. */
+/**
+ * Flow rate in liters per minute over an interval. Zero when no liters were measured.
+ * Liters measured over an empty or reversed interval are an infinite rate, never zero.
+ */
 export function flowRateLitersPerMinute(liters: number, fromMs: number, toMs: number): number {
   const elapsedMs = toMs - fromMs;
-  if (!(elapsedMs > 0) || !(liters > 0)) return 0;
+  if (!(liters > 0)) return 0;
+  if (!(elapsedMs > 0)) return Number.POSITIVE_INFINITY;
   return (liters * 60_000) / elapsedMs;
 }
 

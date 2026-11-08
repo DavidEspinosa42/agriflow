@@ -193,6 +193,13 @@ export class ControllerStore {
       );
   }
 
+  /** Remove a running-session row that never dispensed. Rows with delivered liters are kept. */
+  discardUnstartedSession(sessionId: string): void {
+    this.#db
+      .prepare("DELETE FROM open_sessions WHERE session_id = ? AND liters = 0")
+      .run(sessionId);
+  }
+
   /** The unfinished session left by a crash or power cut, if any. */
   findOpenSession(): PersistedOpenSession | null {
     const row = this.#db

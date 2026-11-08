@@ -43,8 +43,12 @@ describe("metering", () => {
 
   it("computes flow rate and judges plausibility", () => {
     expect(flowRateLitersPerMinute(10, 0, 30_000)).toBeCloseTo(20);
-    expect(flowRateLitersPerMinute(10, 5, 5)).toBe(0);
-    expect(flowRateLitersPerMinute(10, 10, 5)).toBe(0);
+    expect(flowRateLitersPerMinute(10, 5, 5)).toBe(Number.POSITIVE_INFINITY);
+    expect(flowRateLitersPerMinute(10, 10, 5)).toBe(Number.POSITIVE_INFINITY);
+    expect(flowRateLitersPerMinute(0, 5, 5)).toBe(0);
+    expect(
+      isPlausibleFlow(flowRateLitersPerMinute(10, 5, 5), { maxFlowLitersPerMinute: 300 }),
+    ).toBe(false);
     expect(isPlausibleFlow(100, { maxFlowLitersPerMinute: 300 })).toBe(true);
     expect(isPlausibleFlow(301, { maxFlowLitersPerMinute: 300 })).toBe(false);
     expect(isPlausibleFlow(-100, { maxFlowLitersPerMinute: 300 })).toBe(false);
