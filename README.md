@@ -71,7 +71,17 @@ repository tests still run.
 
 Development runs on Windows with simulated hardware (`HARDWARE_DRIVER=simulator`). The same
 controller code runs on the Raspberry Pi with GPIO and the USB reader. Administration is by CLI
-scripts in v1: seed, enroll a fob, issue a device token, back up.
+scripts in v1. Copy `.env.example` to `.env` and set `FOB_SALT` first.
+
+```bash
+pnpm migrate                                   # controller (SQLite) and server (MySQL) schemas
+pnpm seed                                      # demo machines and operators on the controller
+pnpm seed --server --history 30                # also demo devices, tokens and 30 days of history
+pnpm enroll-fob --operator op-0007             # then present the fob; only its salted hash is stored
+pnpm issue-token device --id pump-01 --tank tank-1
+pnpm issue-token manager --id mgr-1            # tokens are printed once; only hashes are stored
+pnpm backup                                    # verified online backup of the controller database
+```
 
 ## API
 

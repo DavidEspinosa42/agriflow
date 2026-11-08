@@ -14,6 +14,7 @@ import { connect, runMigrations } from "./connection.ts";
 import { MysqlRepository } from "./mysql-repository.ts";
 import { hashToken, MemoryRepository, type SyncRepository } from "./repository.ts";
 import { devices, managers, transactions } from "./schema.ts";
+import { issueDeviceToken, issueManagerToken, newToken } from "./tokens.ts";
 
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
@@ -352,6 +353,23 @@ describe.skipIf(url === undefined)("mysql", () => {
     expect(
       await repo.findDeviceByTokenHash(hashToken("device-token-0123456789abcdef")),
     ).toBeUndefined();
+  });
+
+  it("issues tokens that authenticate, and rotating one revokes the old", async () => {
+    const first = await issueDeviceToken(conn.db, { deviceId: "pump-77", tankId: "tank-7" }, 1);
+    expect(await repo.findDeviceByTokenHash(hashToken(first))).toEqual({
+      deviceId: "pump-77",
+      tankId: "tank-7",
+    });
+    const second = await issueDeviceToken(conn.db, { deviceId: "pump-77", tankId: "tank-7" }, 2);
+    expect(second).not.toBe(first);
+    expect(await repo.findDeviceByTokenHash(hashToken(first))).toBeUndefined();
+    expect(await repo.findDeviceByTokenHash(hashToken(second))).toBeDefined();
+
+    const manager = await issueManagerToken(conn.db, { managerId: "mgr-77" }, 1);
+    expect(await repo.findManagerByTokenHash(hashToken(manager))).toEqual({ managerId: "mgr-77" });
+    await expect(issueManagerToken(conn.db, { managerId: "bad id" }, 1)).rejects.toThrow();
+    expect(newToken()).toMatch(/^[A-Za-z0-9_-]{43}$/);
   });
 
   it("refuses to update or delete a stored transaction", async () => {

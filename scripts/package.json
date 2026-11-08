@@ -1,0 +1,10 @@
+{
+  "name": "@agriflow/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@agriflow/core": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

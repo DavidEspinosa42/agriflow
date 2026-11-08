@@ -29,6 +29,11 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm lint && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
+    "seed": "node --env-file-if-exists=.env scripts/seed.ts",
+    "enroll-fob": "node --env-file-if-exists=.env scripts/enroll-fob.ts",
+    "issue-token": "node --env-file-if-exists=.env scripts/issue-token.ts",
+    "backup": "node --env-file-if-exists=.env scripts/backup.ts"
   }
 }

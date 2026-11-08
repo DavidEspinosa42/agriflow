@@ -231,6 +231,15 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
+  scripts:
+    dependencies:
+      '@agriflow/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
 packages:
 
   '@biomejs/biome@2.6.4':
