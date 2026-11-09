@@ -88,7 +88,7 @@ export function aggregate(
   groupBy: GroupBy,
   utcOffsetMinutes: number,
 ): ConsumptionRow[] {
-  const groups = new Map<string, { liters: number; sessions: number }>();
+  const groups = new Map<string, { liters: number; sessions: number; label?: string }>();
   for (const row of rows) {
     const key =
       groupBy === "machine"
@@ -101,11 +101,18 @@ export function aggregate(
     const group = groups.get(key) ?? { liters: 0, sessions: 0 };
     group.liters += row.liters;
     group.sessions += 1;
+    if (groupBy === "machine" && row.equipmentNumber !== undefined) {
+      // Several labels can exist if a machine was renumbered; the greatest is used, as in SQL.
+      if (group.label === undefined || row.equipmentNumber > group.label) {
+        group.label = row.equipmentNumber;
+      }
+    }
     groups.set(key, group);
   }
   return sortConsumption(
     [...groups.entries()].map(([key, g]) => ({
       key,
+      ...(g.label === undefined ? {} : { label: g.label }),
       liters: roundLiters(g.liters),
       sessions: g.sessions,
     })),

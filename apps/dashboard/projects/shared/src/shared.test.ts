@@ -11,6 +11,7 @@ const idle: Snapshot = {
   estopEngaged: false,
   operatorId: null,
   machineId: null,
+  equipmentNumber: null,
   liters: 0,
   endReason: null,
   notice: { kind: "none" },
@@ -203,6 +204,10 @@ describe("format", () => {
     const ms = Date.UTC(2026, 2, 10, 1, 0);
     expect(formatDateTime(ms, "es", "America/Argentina/Buenos_Aires")).toContain("22:00");
     expect(formatDateTime(ms, "es", "UTC")).toContain("01:00");
+    // English spells the month out and uses a 12-hour clock, so 9/3 cannot be misread.
+    expect(formatDateTime(ms, "en", "America/Argentina/Buenos_Aires")).toBe(
+      "Mar 9, 2026, 10:00 PM",
+    );
   });
 
   it("formats elapsed time", () => {

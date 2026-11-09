@@ -83,4 +83,9 @@ export const migrations: readonly string[] = [
   `
   CREATE UNIQUE INDEX machines_equipment_number_ci ON machines (upper(equipment_number));
   `,
+  // Sessions keep the equipment number the machine had at the time. Older rows stay without one
+  // because finalized sessions are append-only.
+  `
+  ALTER TABLE sessions ADD COLUMN equipment_number TEXT;
+  `,
 ];

@@ -38,6 +38,7 @@ export function sameRecord(a: SessionRecord, b: SessionRecord): boolean {
     a.tankId === b.tankId &&
     a.operatorId === b.operatorId &&
     a.machineId === b.machineId &&
+    a.equipmentNumber === b.equipmentNumber &&
     a.startedAtMs === b.startedAtMs &&
     a.endedAtMs === b.endedAtMs &&
     a.liters === b.liters &&

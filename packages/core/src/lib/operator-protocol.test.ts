@@ -12,6 +12,7 @@ const idle: Snapshot = {
   estopEngaged: false,
   operatorId: null,
   machineId: null,
+  equipmentNumber: null,
   liters: 0,
   endReason: null,
   notice: { kind: "none" },

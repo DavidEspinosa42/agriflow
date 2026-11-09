@@ -68,7 +68,7 @@ export class MysqlRepository implements SyncRepository, ReportRepository {
             // a row another transaction committed after this one started.
             .for("share");
           if (existing === undefined) throw error;
-          const { receivedAtMs: _ignored, ...stored } = existing;
+          const stored = withoutReceived(existing);
           acks.push({
             sessionId: record.sessionId,
             status: sameRecord(SessionRecord.parse(stored), record) ? "duplicate" : "conflict",
@@ -128,6 +128,11 @@ export class MysqlRepository implements SyncRepository, ReportRepository {
     const rows = await this.#db
       .select({
         key: sql<string>`${key}`.as("group_key"),
+        // Machines are shown by equipment number; the id stays the key.
+        label:
+          groupBy === "machine"
+            ? sql<string | null>`MAX(${transactions.equipmentNumber})`
+            : sql<null>`NULL`,
         liters: sum(transactions.liters),
         sessions: count(),
       })
@@ -137,6 +142,7 @@ export class MysqlRepository implements SyncRepository, ReportRepository {
     return sortConsumption(
       rows.map((row) => ({
         key: groupBy === "day" ? dayKey(Number(row.key)) : String(row.key),
+        ...(row.label === null || row.label === undefined ? {} : { label: String(row.label) }),
         liters: roundLiters(Number(row.liters ?? 0)),
         sessions: Number(row.sessions),
       })),
@@ -176,7 +182,10 @@ function conditions(filter: TransactionFilter): SQL[] {
   return out;
 }
 
-function withoutReceived<T extends { receivedAtMs: number }>(row: T): Omit<T, "receivedAtMs"> {
-  const { receivedAtMs: _ignored, ...rest } = row;
-  return rest;
+/** A stored row as the wire record: no receive time, and no `null` for an absent equipment number. */
+function withoutReceived<T extends { receivedAtMs: number; equipmentNumber: string | null }>(
+  row: T,
+): Omit<T, "receivedAtMs" | "equipmentNumber"> & { equipmentNumber?: string } {
+  const { receivedAtMs: _ignored, equipmentNumber, ...rest } = row;
+  return equipmentNumber === null ? rest : { ...rest, equipmentNumber };
 }

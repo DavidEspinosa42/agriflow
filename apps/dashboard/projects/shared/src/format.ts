@@ -1,6 +1,6 @@
 export type Locale = "es" | "en";
 
-const TAGS: Record<Locale, string> = { es: "es-AR", en: "en-GB" };
+const TAGS: Record<Locale, string> = { es: "es-AR", en: "en-US" };
 
 /** 84.3 becomes "84,3 L" in Spanish and "84.3 L" in English. */
 export function formatLiters(liters: number, locale: Locale = "en", digits = 1): string {
@@ -10,12 +10,15 @@ export function formatLiters(liters: number, locale: Locale = "en", digits = 1):
   }).format(liters)} L`;
 }
 
-/** Date and time in the farm's time zone, for example "9/3/26, 22:00". */
+/**
+ * Date and time in the farm's time zone, with the month spelled out so day and month cannot be
+ * mixed up: "Mar 9, 2026, 10:00 PM" in English, "9 mar 2026, 22:00" in Spanish.
+ */
 export function formatDateTime(ms: number, locale: Locale = "en", timeZone?: string): string {
   return new Intl.DateTimeFormat(TAGS[locale], {
-    dateStyle: "short",
+    dateStyle: "medium",
     timeStyle: "short",
-    hourCycle: "h23",
+    hourCycle: locale === "es" ? "h23" : "h12",
     ...(timeZone === undefined ? {} : { timeZone }),
   }).format(ms);
 }

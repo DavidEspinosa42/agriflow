@@ -25,6 +25,8 @@ export type GroupByDto = z.infer<typeof GroupBySchema>;
 export const ConsumptionRowSchema = z.strictObject({
   /** Machine, operator or device id, or a YYYY-MM-DD date for day grouping. */
   key: z.string(),
+  /** Display name for the key when it differs from it, e.g. the equipment number of a machine. */
+  label: z.string().optional(),
   liters: z.number().nonnegative(),
   sessions: z.number().int().nonnegative(),
 });

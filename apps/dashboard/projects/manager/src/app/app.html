@@ -61,7 +61,7 @@
         <ul class="share" data-testid="by-machine">
           @for (r of d.machines; track r.key) {
             <li>
-              <span class="name">{{ r.key }}</span>
+              <span class="name">{{ r.label ?? r.key }}</span>
               <span class="track"><span class="fill" [style.width.%]="(r.liters / maxMachine()) * 100"></span></span>
               <span class="num">{{ liters(r.liters, 0) }}</span>
             </li>
@@ -108,7 +108,7 @@
           <select data-testid="filter-machine" (change)="store.setFilter({ machineId: pick($event) })">
             <option value="">{{ m().all }}</option>
             @for (r of d.machines; track r.key) {
-              <option [value]="r.key" [selected]="store.filters().machineId === r.key">{{ r.key }}</option>
+              <option [value]="r.key" [selected]="store.filters().machineId === r.key">{{ r.label ?? r.key }}</option>
             }
           </select>
         </label>

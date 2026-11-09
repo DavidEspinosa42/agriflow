@@ -73,7 +73,10 @@ export class App {
     if (d === null) return [];
     const byDay = new Map(d.daily.map((row) => [row.key, row.liters]));
     return periodDayKeys(d.loadedAtMs, d.days).map((key) => ({
-      label: key.slice(8, 10) + "/" + key.slice(5, 7),
+      label:
+        this.locale() === "es"
+          ? `${key.slice(8, 10)}/${key.slice(5, 7)}`
+          : `${key.slice(5, 7)}/${key.slice(8, 10)}`,
       value: byDay.get(key) ?? 0,
     }));
   });
@@ -111,7 +114,7 @@ export class App {
     (this.data()?.page.items ?? []).map((t) => ({
       id: t.sessionId,
       date: formatDateTime(t.startedAtMs, this.locale(), FARM_TIME_ZONE),
-      machine: t.machineId,
+      machine: t.equipmentNumber ?? t.machineId,
       operator: t.operatorId,
       liters: this.liters(t.liters),
       reason: this.m().endReasons[t.endReason] ?? t.endReason,

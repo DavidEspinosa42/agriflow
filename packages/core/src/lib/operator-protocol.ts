@@ -36,6 +36,7 @@ export const SnapshotSchema = z.strictObject({
   estopEngaged: z.boolean(),
   operatorId: z.string().nullable(),
   machineId: z.string().nullable(),
+  equipmentNumber: z.string().nullable(),
   liters: z.number().nonnegative(),
   endReason: EndReasonSchema.nullable(),
   notice: NoticeSchema,

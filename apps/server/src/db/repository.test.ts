@@ -156,6 +156,34 @@ function reportContract(name: string, make: () => Promise<ReportCtx>) {
       { machineId: "H-03", operatorId: "op-1" },
     ];
 
+    it("keeps the equipment number and labels machine totals with it", async () => {
+      await ctx.reset();
+      await ctx.addDevice("pump-01", "tank-1");
+      await ctx.repo.storeBatch(
+        [
+          rec(301, { machineId: "m-t12", equipmentNumber: "T-12", liters: 10 }),
+          rec(302, { machineId: "m-t12", equipmentNumber: "T-12", liters: 5 }),
+          rec(303, { machineId: "m-old", liters: 2 }), // an older controller sends no number
+        ],
+        1,
+      );
+      const { items } = await ctx.repo.listTransactions({}, { limit: 10, offset: 0 });
+      const byId = new Map(items.map((t) => [t.sessionId as string, t]));
+      expect(byId.get(uuid(301))?.equipmentNumber).toBe("T-12");
+      expect(byId.get(uuid(303))).not.toHaveProperty("equipmentNumber");
+      expect(await ctx.repo.consumption({}, "machine", 0)).toEqual([
+        { key: "m-t12", label: "T-12", liters: 15, sessions: 2 },
+        { key: "m-old", liters: 2, sessions: 1 },
+      ]);
+      // The same session resent with a different number is a conflict, not a silent change.
+      expect(
+        await ctx.repo.storeBatch(
+          [rec(301, { machineId: "m-t12", equipmentNumber: "T-13", liters: 10 })],
+          2,
+        ),
+      ).toEqual([{ sessionId: uuid(301), status: "conflict" }]);
+    });
+
     it("lists newest first with stable paging, totals and received time", async () => {
       const all = await ctx.repo.listTransactions({}, { limit: 50, offset: 0 });
       expect(all.total).toBe(5);

@@ -95,6 +95,10 @@ export class DispensingService {
     if (hardware.estop.isEngaged()) this.#notice = { kind: "fault", reason: "estop_engaged" };
   }
 
+  #equipmentNumber(machineId: string): string | null {
+    return this.#o.store.equipmentNumberOf(machineId) ?? null;
+  }
+
   snapshot(): Snapshot {
     const s = this.#state;
     const base = {
@@ -109,6 +113,7 @@ export class DispensingService {
           phase: this.#pending === null ? "idle" : "awaiting_machine",
           operatorId: null,
           machineId: null,
+          equipmentNumber: null,
           liters: 0,
           endReason: null,
         };
@@ -118,6 +123,7 @@ export class DispensingService {
           phase: "authorized",
           operatorId: s.authorization.operatorId,
           machineId: s.authorization.machineId,
+          equipmentNumber: this.#equipmentNumber(s.authorization.machineId),
           liters: 0,
           endReason: null,
         };
@@ -127,6 +133,7 @@ export class DispensingService {
           phase: "dispensing",
           operatorId: s.operatorId,
           machineId: s.machineId,
+          equipmentNumber: this.#equipmentNumber(s.machineId),
           liters: s.liters,
           endReason: null,
         };
@@ -136,6 +143,7 @@ export class DispensingService {
           phase: "finished",
           operatorId: s.operatorId,
           machineId: s.machineId,
+          equipmentNumber: this.#equipmentNumber(s.machineId),
           liters: s.liters,
           endReason: s.endReason,
         };

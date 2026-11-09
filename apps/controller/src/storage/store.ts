@@ -170,6 +170,14 @@ export class ControllerStore {
     });
   }
 
+  /** The current equipment number of a machine, for display. */
+  equipmentNumberOf(machineId: string): string | undefined {
+    const row = this.#db
+      .prepare("SELECT equipment_number FROM machines WHERE machine_id = ?")
+      .get(machineId) as Row | undefined;
+    return row === undefined ? undefined : String(row["equipment_number"]);
+  }
+
   // --- running session --------------------------------------------------------------------
 
   /** Durably record progress. Called at every state change and every checkpoint interval. */
@@ -234,8 +242,8 @@ export class ControllerStore {
         .prepare(
           `INSERT INTO sessions
              (session_id, device_id, tank_id, operator_id, machine_id,
-              started_at_ms, ended_at_ms, liters, end_reason)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              equipment_number, started_at_ms, ended_at_ms, liters, end_reason)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           r.sessionId,
@@ -243,6 +251,7 @@ export class ControllerStore {
           r.tankId,
           r.operatorId,
           r.machineId,
+          r.equipmentNumber ?? this.equipmentNumberOf(r.machineId) ?? null,
           r.startedAtMs,
           r.endedAtMs,
           r.liters,
@@ -278,6 +287,7 @@ export class ControllerStore {
       tankId: row["tank_id"],
       operatorId: row["operator_id"],
       machineId: row["machine_id"],
+      equipmentNumber: row["equipment_number"] ?? undefined,
       startedAtMs: row["started_at_ms"],
       endedAtMs: row["ended_at_ms"],
       liters: row["liters"],

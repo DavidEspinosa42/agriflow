@@ -97,12 +97,17 @@ export function historyRecords(
       const start = day * DAY + (6 + Math.floor(random() * 12)) * HOUR + i * 17 * 60_000;
       const liters = Math.round((15 + random() * 170) * 10) / 10;
       const minutes = Math.max(1, Math.round(liters / 60));
+      const operatorId = operators[Math.floor(random() * operators.length)] ?? "op-0007";
+      const machine = machines[Math.floor(random() * machines.length)];
       out.push({
-        sessionId: uuidFrom(`${seed}:${deviceId}:${tankId}:${day}:${i}`),
+        // "v2": records now carry the equipment number, so they get new ids instead of
+        // conflicting with demo history that an earlier version of this script stored.
+        sessionId: uuidFrom(`v2:${seed}:${deviceId}:${tankId}:${day}:${i}`),
         deviceId,
         tankId,
-        operatorId: operators[Math.floor(random() * operators.length)] ?? "op-0007",
-        machineId: machines[Math.floor(random() * machines.length)]?.machineId ?? "m-t12",
+        operatorId,
+        machineId: machine?.machineId ?? "m-t12",
+        equipmentNumber: machine?.equipmentNumber ?? "T-12",
         startedAtMs: start,
         endedAtMs: start + minutes * 60_000,
         liters,

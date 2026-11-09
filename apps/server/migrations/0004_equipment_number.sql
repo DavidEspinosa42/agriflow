@@ -1,0 +1,1 @@
+ALTER TABLE `transactions` ADD `equipment_number` varchar(16);

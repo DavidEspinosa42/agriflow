@@ -14,6 +14,7 @@ const tx = (n: number, machine: string, operator: string, liters: number, starte
   tankId: "tank-1",
   operatorId: operator,
   machineId: machine,
+  equipmentNumber: machine.slice(2).toUpperCase().replace(/^(\D)/, "$1-"),
   startedAtMs,
   endedAtMs: startedAtMs + 60_000,
   liters,
@@ -22,9 +23,9 @@ const tx = (n: number, machine: string, operator: string, liters: number, starte
 });
 
 const ALL = [
-  tx(1, "T-12", "op-0007", 84.3, T(9, 12)),
-  tx(2, "H-03", "op-0012", 120, T(8, 12)),
-  tx(3, "T-12", "op-0012", 15.7, T(8, 14)),
+  tx(1, "m-t12", "op-0007", 84.3, T(9, 12)),
+  tx(2, "m-h03", "op-0012", 120, T(8, 12)),
+  tx(3, "m-t12", "op-0012", 15.7, T(8, 14)),
 ];
 
 interface Recorded {
@@ -66,8 +67,8 @@ function backend(options: { validToken?: string; down?: boolean } = {}) {
         case "/v1/machines":
           return {
             items: [
-              { key: "H-03", liters: 120, sessions: 1 },
-              { key: "T-12", liters: 100, sessions: 2 },
+              { key: "m-h03", label: "H-03", liters: 120, sessions: 1 },
+              { key: "m-t12", label: "T-12", liters: 100, sessions: 2 },
             ],
           };
         case "/v1/operators":
@@ -103,7 +104,7 @@ function backend(options: { validToken?: string; down?: boolean } = {}) {
   return { recorded, fetch };
 }
 
-async function setup(options: Parameters<typeof backend>[0] = {}, locale: "es" | "en" = "es") {
+async function setup(options: Parameters<typeof backend>[0] = {}, locale: "es" | "en" = "en") {
   const be = backend(options);
   TestBed.configureTestingModule({
     imports: [App],
@@ -152,23 +153,23 @@ async function setup(options: Parameters<typeof backend>[0] = {}, locale: "es" |
 describe("manager dashboard", () => {
   it("asks for the access key first", async () => {
     const { text, el } = await setup();
-    expect(text()).toContain("Ingreso de gerencia");
+    expect(text()).toContain("Manager sign in");
     expect(el.querySelector("input[type=password]")).not.toBeNull();
-    expect(text()).not.toContain("Litros despachados");
+    expect(text()).not.toContain("Liters dispensed");
   });
 
   it("rejects a wrong key, stays signed out and keeps no key in the form", async () => {
     const { text, signIn, el } = await setup();
     await signIn("wrong-token-0123456789");
-    expect(text()).toContain("La clave no es válida.");
-    expect(text()).toContain("Ingreso de gerencia");
+    expect(text()).toContain("The key is not valid.");
+    expect(text()).toContain("Manager sign in");
     expect((el.querySelector("input[type=password]") as HTMLInputElement).value).toBe("");
   });
 
   it("explains a server that cannot be reached", async () => {
     const { text, signIn } = await setup({ down: true });
     await signIn("good-token-0123456789");
-    expect(text()).toContain("No hay conexión con el servidor.");
+    expect(text()).toContain("Cannot reach the server.");
   });
 
   it("shows totals, shares, controllers and transactions after signing in", async () => {
@@ -179,9 +180,14 @@ describe("manager dashboard", () => {
     expect(el.querySelector("[data-testid=by-machine]")?.textContent).toContain("H-03");
     expect(el.querySelector("[data-testid=by-operator]")?.textContent).toContain("op-0012");
     expect(el.querySelectorAll("[data-testid=rows] tr").length).toBe(3);
-    expect(text()).toContain("84,3 L");
-    // Newest first, in the farm's time zone: 12:00 UTC is 09:00 in Argentina.
-    expect(el.querySelector("[data-testid=rows] tr")?.textContent).toContain("09:00");
+    expect(text()).toContain("84.3 L");
+    // Newest first, in the farm's time zone: 12:00 UTC is 9:00 AM in Argentina.
+    expect(el.querySelector("[data-testid=rows] tr")?.textContent).toContain(
+      "Mar 9, 2026, 9:00 AM",
+    );
+    // People see the equipment number, not the internal machine id.
+    expect(el.querySelector("[data-testid=rows] tr")?.textContent).toContain("T-12");
+    expect(el.querySelector("[data-testid=rows]")?.textContent).not.toContain("m-t12");
   });
 
   it("draws one bar for every day of the period, including empty days", async () => {
@@ -198,27 +204,27 @@ describe("manager dashboard", () => {
       health: li.querySelector(".dot")?.getAttribute("data-health"),
     }));
     expect(items[0]?.health).toBe("ok");
-    expect(items[0]?.text).toContain("hace 30 min");
+    expect(items[0]?.text).toContain("30 min ago");
     expect(items[1]?.health).toBe("never");
-    expect(items[1]?.text).toContain("Nunca sincronizó");
+    expect(items[1]?.text).toContain("Never synced");
     expect(items[2]?.health).toBe("stale");
-    expect(items[2]?.text).toContain("hace 3 d");
+    expect(items[2]?.text).toContain("3 d ago");
   });
 
   it("filters the transactions by equipment and asks the server for it", async () => {
     const { signIn, pick, el, be } = await setup();
     await signIn("good-token-0123456789");
-    await pick("[data-testid=filter-machine]", "H-03");
+    await pick("[data-testid=filter-machine]", "m-h03");
     expect(el.querySelectorAll("[data-testid=rows] tr").length).toBe(1);
     expect(
-      be.recorded.urls.some((u) => u.includes("/v1/transactions") && u.includes("machineId=H-03")),
+      be.recorded.urls.some((u) => u.includes("/v1/transactions") && u.includes("machineId=m-h03")),
     ).toBe(true);
   });
 
   it("drops filters when the period changes, so none stays active out of sight", async () => {
     const { signIn, pick, be } = await setup();
     await signIn("good-token-0123456789");
-    await pick("[data-testid=filter-machine]", "H-03");
+    await pick("[data-testid=filter-machine]", "m-h03");
     await pick("header select", "7");
     const last = [...be.recorded.urls].reverse().find((u) => u.includes("/v1/transactions"));
     expect(last).not.toContain("machineId");
@@ -236,9 +242,9 @@ describe("manager dashboard", () => {
   it("signs out and forgets the data", async () => {
     const { signIn, click, text } = await setup();
     await signIn("good-token-0123456789");
-    await click("Salir");
-    expect(text()).toContain("Ingreso de gerencia");
-    expect(text()).not.toContain("Litros despachados");
+    await click("Sign out");
+    expect(text()).toContain("Manager sign in");
+    expect(text()).not.toContain("Liters dispensed");
   });
 
   it("switches language with the flag buttons without signing out", async () => {
@@ -252,9 +258,9 @@ describe("manager dashboard", () => {
     expect(document.documentElement.lang).toBe("es");
   });
 
-  it("speaks English when asked", async () => {
-    const { text } = await setup({}, "en");
-    expect(text()).toContain("Manager sign in");
+  it("speaks Spanish when asked", async () => {
+    const { text } = await setup({}, "es");
+    expect(text()).toContain("Ingreso de gerencia");
   });
 });
 

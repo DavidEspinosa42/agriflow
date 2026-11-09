@@ -21,6 +21,7 @@ export const transactions = mysqlTable(
     tankId: varchar("tank_id", { length: 64 }).notNull(),
     operatorId: varchar("operator_id", { length: 64 }).notNull(),
     machineId: varchar("machine_id", { length: 64 }).notNull(),
+    equipmentNumber: varchar("equipment_number", { length: 16 }),
     startedAtMs: bigint("started_at_ms", { mode: "number" }).notNull(),
     endedAtMs: bigint("ended_at_ms", { mode: "number" }).notNull(),
     liters: double("liters").notNull(),

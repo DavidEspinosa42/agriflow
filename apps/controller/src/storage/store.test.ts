@@ -124,6 +124,33 @@ describe("append-only ledger (invariant 2)", () => {
   });
 });
 
+describe("equipment number on sessions", () => {
+  it("records the machine's equipment number when the session is finalized", () => {
+    withStore((store) => {
+      store.upsertMachine({ machineId: "m1", equipmentNumber: "T-12", active: true } as Machine);
+      store.finalizeSession(record(S1), 0);
+      expect(store.findSession(S1)?.equipmentNumber).toBe("T-12");
+    });
+  });
+
+  it("keeps the number the machine had then, even if it is renumbered later", () => {
+    withStore((store) => {
+      store.upsertMachine({ machineId: "m1", equipmentNumber: "T-12", active: true } as Machine);
+      store.finalizeSession(record(S1), 0);
+      store.upsertMachine({ machineId: "m1", equipmentNumber: "T-99", active: true } as Machine);
+      expect(store.findSession(S1)?.equipmentNumber).toBe("T-12");
+      expect(store.equipmentNumberOf("m1")).toBe("T-99");
+    });
+  });
+
+  it("leaves it out for a machine that is not on this controller", () => {
+    withStore((store) => {
+      store.finalizeSession(record(S1), 0);
+      expect(store.findSession(S1)?.equipmentNumber).toBeUndefined();
+    });
+  });
+});
+
 describe("hardening", () => {
   it("blocks INSERT OR REPLACE from overwriting finalized rows", () => {
     const db = openDatabase(path);
@@ -131,7 +158,9 @@ describe("hardening", () => {
     store.finalizeSession(record(S1), 0);
     expect(() =>
       db.exec(
-        `INSERT OR REPLACE INTO sessions VALUES ('${S1}', 'pump-01', 'tank-1', 'op-1', 'm1', 1, 2, 99, 'operator_stop')`,
+        `INSERT OR REPLACE INTO sessions
+           (session_id, device_id, tank_id, operator_id, machine_id, started_at_ms, ended_at_ms, liters, end_reason)
+         VALUES ('${S1}', 'pump-01', 'tank-1', 'op-1', 'm1', 1, 2, 99, 'operator_stop')`,
       ),
     ).toThrow(/append-only/);
     db.exec(

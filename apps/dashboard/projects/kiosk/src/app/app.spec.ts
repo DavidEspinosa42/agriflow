@@ -10,6 +10,7 @@ const idle: Snapshot = {
   estopEngaged: false,
   operatorId: null,
   machineId: null,
+  equipmentNumber: null,
   liters: 0,
   endReason: null,
   notice: { kind: "none" },
@@ -36,7 +37,7 @@ class FakeSocket implements SocketLike {
   }
 }
 
-async function setup(locale: "es" | "en" = "es") {
+async function setup(locale: "es" | "en" = "en") {
   const socket = new FakeSocket();
   TestBed.configureTestingModule({
     imports: [App],
@@ -73,23 +74,23 @@ describe("kiosk", () => {
   it("asks for the fob when idle and explains a denied scan", async () => {
     const { show, text } = await setup();
     await show(idle);
-    expect(text()).toContain("Acerque su llavero");
+    expect(text()).toContain("Present your fob");
     await show({ ...idle, notice: { kind: "denied", reason: "machine_not_permitted" } });
-    expect(text()).toContain("No tiene permiso para este equipo");
+    expect(text()).toContain("You are not allowed to fuel this equipment");
     await show({ ...idle, notice: { kind: "lapsed" } });
-    expect(text()).toContain("La autorización venció");
+    expect(text()).toContain("The authorization expired");
   });
 
   it("takes the equipment number on the keypad and sends it", async () => {
     const { socket, show, click, el, button } = await setup();
     await show({ ...idle, phase: "awaiting_machine" });
-    expect(button("Aceptar")?.disabled).toBe(true);
+    expect(button("Confirm")?.disabled).toBe(true);
     for (const key of ["T", "-", "1", "2"]) await click(key);
     expect(el.querySelector("[data-testid=equipment-display]")?.textContent).toContain("T-12");
-    await click("Aceptar");
+    await click("Confirm");
     expect(socket.sent).toEqual([{ type: "select_machine", equipmentNumber: "T-12" }]);
     expect(el.querySelector("[data-testid=equipment-display]")?.textContent).toContain(
-      "Por ejemplo",
+      "For example",
     );
   });
 
@@ -99,17 +100,24 @@ describe("kiosk", () => {
     for (let i = 0; i < 20; i++) await click("A");
     const display = () => el.querySelector("[data-testid=equipment-display]")?.textContent?.trim();
     expect(display()).toBe("A".repeat(16));
-    await click("Borrar");
+    await click("Erase");
     expect(display()).toBe("A".repeat(15));
   });
 
   it("starts or cancels from the authorized screen", async () => {
     const { socket, show, click, text } = await setup();
-    await show({ ...idle, phase: "authorized", operatorId: "op-0007", machineId: "m-t12" });
+    await show({
+      ...idle,
+      phase: "authorized",
+      operatorId: "op-0007",
+      machineId: "m-t12",
+      equipmentNumber: "T-12",
+    });
     expect(text()).toContain("op-0007");
-    expect(text()).toContain("m-t12");
-    await click("INICIAR");
-    await click("Cancelar");
+    expect(text()).toContain("T-12");
+    expect(text()).not.toContain("m-t12");
+    await click("START");
+    await click("Cancel");
     expect(socket.sent).toEqual([{ type: "start" }, { type: "stop" }]);
   });
 
@@ -121,11 +129,12 @@ describe("kiosk", () => {
       pumpOn: true,
       operatorId: "op-0007",
       machineId: "m-t12",
+      equipmentNumber: "T-12",
       liters: 84.3,
     });
-    expect(el.querySelector("[data-testid=liters]")?.textContent).toContain("84,3 L");
-    expect(el.textContent).toContain("Bomba encendida");
-    await click("DETENER");
+    expect(el.querySelector("[data-testid=liters]")?.textContent).toContain("84.3 L");
+    expect(el.textContent).toContain("Pump on");
+    await click("STOP");
     expect(socket.sent).toEqual([{ type: "stop" }]);
   });
 
@@ -136,13 +145,14 @@ describe("kiosk", () => {
       phase: "finished",
       operatorId: "op-0007",
       machineId: "m-t12",
+      equipmentNumber: "T-12",
       liters: 84.3,
       endReason: "max_liters",
     });
-    expect(text()).toContain("Carga finalizada");
-    expect(text()).toContain("84,3 L");
-    expect(text()).toContain("Límite de litros alcanzado");
-    await click("Aceptar");
+    expect(text()).toContain("Fueling finished");
+    expect(text()).toContain("84.3 L");
+    expect(text()).toContain("Liter limit reached");
+    await click("OK");
     expect(socket.sent).toEqual([{ type: "dismiss" }]);
   });
 
@@ -154,28 +164,29 @@ describe("kiosk", () => {
       estopEngaged: true,
       operatorId: "op-0007",
       machineId: "m-t12",
+      equipmentNumber: "T-12",
     });
-    expect(text()).toContain("PARADA DE EMERGENCIA ACTIVA");
-    expect(button("INICIAR")?.disabled).toBe(true);
+    expect(text()).toContain("EMERGENCY STOP ACTIVE");
+    expect(button("START")?.disabled).toBe(true);
   });
 
   it("warns and disables the controls when the controller connection is lost", async () => {
     const { socket, fixture, show, text, button } = await setup();
     await show({ ...idle, phase: "dispensing", pumpOn: true, liters: 5 });
-    expect(text()).not.toContain("Sin conexión");
+    expect(text()).not.toContain("No connection");
     socket.drop();
     await fixture.whenStable();
-    expect(text()).toContain("Sin conexión con el controlador");
-    expect(text()).toContain("Use el botón físico de parada");
-    expect(button("DETENER")?.disabled).toBe(true);
+    expect(text()).toContain("No connection to the controller");
+    expect(text()).toContain("Use the physical stop button");
+    expect(button("STOP")?.disabled).toBe(true);
   });
 
-  it("speaks English when asked", async () => {
-    const { show, text } = await setup("en");
+  it("speaks Spanish when asked", async () => {
+    const { show, text } = await setup("es");
     await show(idle);
-    expect(text()).toContain("Present your fob");
+    expect(text()).toContain("Acerque su llavero");
     await show({ ...idle, notice: { kind: "fault", reason: "implausible_flow" } });
-    expect(text()).toContain("Abnormal flow detected");
+    expect(text()).toContain("Caudal anormal detectado");
   });
 
   it("never renders a fob UID, even if a snapshot were to carry one", async () => {

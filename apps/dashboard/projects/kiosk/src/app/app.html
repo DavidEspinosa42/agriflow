@@ -43,7 +43,7 @@
           <h1>{{ m().authorizedTitle }}</h1>
           <dl class="facts">
             <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.equipmentNumber ?? s.machineId }}</dd></div>
           </dl>
           <p class="hint">{{ m().authorizedHint }}</p>
           <div class="actions">
@@ -62,7 +62,7 @@
           <div class="liters" data-testid="liters" aria-live="off">{{ liters() }}</div>
           <dl class="facts">
             <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.equipmentNumber ?? s.machineId }}</dd></div>
           </dl>
           <p class="pump" [class.on]="s.pumpOn">{{ s.pumpOn ? m().pumpOn : m().pumpOff }}</p>
           <div class="actions">
@@ -79,7 +79,7 @@
           <div class="liters" data-testid="liters">{{ liters() }}</div>
           <dl class="facts">
             <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.equipmentNumber ?? s.machineId }}</dd></div>
           </dl>
           <p class="hint">{{ endReason() }}</p>
           <div class="actions">

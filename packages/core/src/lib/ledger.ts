@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { DeviceId, MachineId, OperatorId, SessionId, TankId, TimestampMs } from "./schemas.ts";
+import {
+  DeviceId,
+  EquipmentNumber,
+  MachineId,
+  OperatorId,
+  SessionId,
+  TankId,
+  TimestampMs,
+} from "./schemas.ts";
 
 export const EndReasonSchema = z.enum([
   "operator_stop",
@@ -17,6 +25,8 @@ export const SessionRecord = z.strictObject({
   tankId: TankId,
   operatorId: OperatorId,
   machineId: MachineId,
+  /** The equipment number the machine had when it was fueled. Absent on older records. */
+  equipmentNumber: EquipmentNumber.optional(),
   startedAtMs: TimestampMs,
   endedAtMs: TimestampMs,
   liters: z.number().nonnegative().finite(),
