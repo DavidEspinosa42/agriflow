@@ -53,7 +53,7 @@ Never log fob UIDs in clear, tokens or secrets.
 Conventional Commits, lowercase noun-phrase subject, no body, no trailing period. Scope matches the
 source folder (`feat(core)`, `feat(controller)`); `docs` and `chore` are unscoped. One concern per
 commit. Every commit passes `pnpm check`. Single author, no `Co-authored-by` trailers, no tool
-attribution. Run the Codex review before each commit.
+attribution.
 
 ## Secrets
 
