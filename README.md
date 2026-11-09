@@ -51,8 +51,26 @@ without creating duplicates.
 
 ## Built with
 
-Node.js and TypeScript, Fastify, SQLite (built-in `node:sqlite`) on the controller, MySQL (Drizzle, mysql2)
-centrally, Angular, zod, Biome, Vitest and fast-check, pnpm workspaces.
+| Area       | Technology                      | Version          | Used for                                           |
+| ---------- | ------------------------------- | ---------------- | -------------------------------------------------- |
+| Runtime    | Node.js                         | 26.13.0          | All packages, strict ESM                           |
+| Runtime    | TypeScript                      | 7.0.2 / 6.0.3    | Backend and core / Angular dashboard               |
+| Domain     | zod                             | 4.6.7            | Schemas and validation of all external input       |
+| Controller | Fastify                         | 5.12.7           | Local API on the Pi                                |
+| Controller | `@fastify/websocket`            | 11.3.6           | Live dispensing updates to the kiosk               |
+| Controller | SQLite (built-in `node:sqlite`) | Node 26.13.0     | Durable offline storage of sessions and the outbox |
+| Server     | Fastify                         | 5.12.7           | Authenticated sync API                             |
+| Server     | MySQL                           | 8.4              | Central storage                                    |
+| Server     | Drizzle ORM / drizzle-kit       | 0.45.4 / 0.31.11 | Queries and migrations                             |
+| Server     | mysql2                          | 3.24.6           | MySQL driver                                       |
+| Dashboard  | Angular                         | 22.2.4           | Operator kiosk and manager dashboard               |
+| Dashboard  | RxJS                            | 7.8.2            | Reactive streams in Angular                        |
+| Testing    | Vitest                          | 5.0.5            | Unit and integration tests                         |
+| Testing    | fast-check                      | 4.10.2           | Property tests for the invariants                  |
+| Tooling    | Biome                           | 2.6.4            | Formatting and linting                             |
+| Tooling    | pnpm workspaces                 | 12.16.1          | Monorepo package management                        |
+
+Versions are pinned exactly in each `package.json`; MySQL matches the CI image.
 
 ## Setup
 
