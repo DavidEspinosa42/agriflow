@@ -1,6 +1,8 @@
 import type { ClientCommand, Snapshot } from "@agriflow/core";
 import {
+  browserStorage,
   type ConnectionState,
+  initialLocale,
   type Locale,
   OperatorClient,
   type SocketLike,
@@ -35,7 +37,7 @@ export function controllerUrl(location: Pick<Location, "protocol" | "host" | "se
 }
 
 export function localeFrom(search: string): Locale {
-  return new URLSearchParams(search).get("lang") === "en" ? "en" : "es";
+  return initialLocale(search, browserStorage());
 }
 
 export const CONTROLLER_URL = new InjectionToken<string>("controllerUrl", {

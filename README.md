@@ -13,7 +13,7 @@ liters and records the session locally, even without internet, then syncs it to 
 ## Screenshots
 
 Captured from the running system with the simulator and dummy data (`pnpm seed`). The kiosk is
-shown at 1024×600, a typical 7 inch touchscreen. The interface is in Spanish; add `?lang=en` for English.
+shown at 1024×600, a typical 7 inch touchscreen. The interface is in English by default; the flag buttons (United States, Argentina) switch to Spanish and the choice is remembered. `?lang=es` opens it in Spanish directly.
 
 | Present the fob                                | Enter the equipment                                | Ready                                            |
 | ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
@@ -166,6 +166,11 @@ Operator-linked identifiers remain potentially personal data; access is restrict
 secrets stay out of logs. Retention, backup and deletion policies must be defined before deployment
 and must preserve audit integrity.
 
-## Ownership and license
+## Ownership
+
+This is a 100% independent, personal side project. It is not related to,
+sponsored by, or developed for any employer or client.
+
+## License
 
 Copyright (c) 2026 David Espinosa. MIT license, see [LICENSE](LICENSE).

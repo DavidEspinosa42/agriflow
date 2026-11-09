@@ -241,6 +241,17 @@ describe("manager dashboard", () => {
     expect(text()).not.toContain("Litros despachados");
   });
 
+  it("switches language with the flag buttons without signing out", async () => {
+    const { signIn, text, el, fixture } = await setup({}, "en");
+    await signIn("good-token-0123456789");
+    expect(text()).toContain("Liters dispensed");
+    (el.querySelector("button[lang=es]") as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(text()).toContain("Litros despachados");
+    expect(el.querySelector("[data-testid=kpi-liters]")).not.toBeNull();
+    expect(document.documentElement.lang).toBe("es");
+  });
+
   it("speaks English when asked", async () => {
     const { text } = await setup({}, "en");
     expect(text()).toContain("Manager sign in");

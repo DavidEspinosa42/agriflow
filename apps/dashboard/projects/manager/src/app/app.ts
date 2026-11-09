@@ -1,5 +1,21 @@
-import { deviceHealth, formatAge, formatDateTime, formatLiters } from "@agriflow/shared";
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from "@angular/core";
+import {
+  browserStorage,
+  deviceHealth,
+  formatAge,
+  formatDateTime,
+  formatLiters,
+  LanguageSwitch,
+  type Locale,
+  saveLocale,
+} from "@agriflow/shared";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from "@angular/core";
 import { type Bar, BarChart } from "./bar-chart";
 import { FARM_TIME_ZONE, LOCALE, ManagerStore, PAGE_SIZE, periodDayKeys } from "./manager-store";
 import { messagesFor } from "./messages";
@@ -9,22 +25,33 @@ const STALE_AFTER_MS = 6 * 3_600_000;
 
 @Component({
   selector: "app-root",
-  imports: [BarChart],
+  imports: [BarChart, LanguageSwitch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./app.html",
   styleUrl: "./app.css",
 })
 export class App {
   protected readonly store = inject(ManagerStore);
-  protected readonly locale = inject(LOCALE);
-  protected readonly m = messagesFor(this.locale);
+  protected readonly locale = signal(inject(LOCALE));
+  protected readonly m = computed(() => messagesFor(this.locale()));
+
+  constructor() {
+    effect(() => {
+      document.documentElement.lang = this.locale();
+    });
+  }
+
+  protected setLocale(locale: Locale): void {
+    this.locale.set(locale);
+    saveLocale(locale, browserStorage());
+  }
   protected readonly periods = [7, 30, 90];
   protected readonly token = signal("");
 
   protected readonly data = this.store.data;
   protected readonly error = computed(() => {
     const kind = this.store.error();
-    return kind === null ? null : this.m.errors[kind];
+    return kind === null ? null : this.m().errors[kind];
   });
 
   protected readonly totals = computed(() => {
@@ -53,7 +80,7 @@ export class App {
 
   protected readonly chartSummary = computed(() => {
     const t = this.totals();
-    return t === null ? "" : `${this.m.dailyTitle}: ${t.liters}`;
+    return t === null ? "" : `${this.m().dailyTitle}: ${t.liters}`;
   });
 
   protected readonly maxMachine = computed(() =>
@@ -71,11 +98,11 @@ export class App {
       return {
         ...device,
         health,
-        label: this.m.health[health],
+        label: this.m().health[health],
         since:
           device.lastReceivedAtMs === null
             ? ""
-            : this.m.ago(formatAge(d.loadedAtMs - device.lastReceivedAtMs)),
+            : this.m().ago(formatAge(d.loadedAtMs - device.lastReceivedAtMs)),
       };
     });
   });
@@ -83,11 +110,11 @@ export class App {
   protected readonly rows = computed(() =>
     (this.data()?.page.items ?? []).map((t) => ({
       id: t.sessionId,
-      date: formatDateTime(t.startedAtMs, this.locale, FARM_TIME_ZONE),
+      date: formatDateTime(t.startedAtMs, this.locale(), FARM_TIME_ZONE),
       machine: t.machineId,
       operator: t.operatorId,
       liters: this.liters(t.liters),
-      reason: this.m.endReasons[t.endReason] ?? t.endReason,
+      reason: this.m().endReasons[t.endReason] ?? t.endReason,
     })),
   );
 
@@ -97,17 +124,20 @@ export class App {
     const from = page.offset + 1;
     const to = Math.min(page.offset + PAGE_SIZE, page.total);
     return {
-      text: this.m.pageOf(from, to, page.total),
+      text: this.m().pageOf(from, to, page.total),
       hasPrevious: page.offset > 0,
       hasNext: to < page.total,
     };
   });
 
   protected liters(value: number, digits = 1): string {
-    return formatLiters(value, this.locale, digits);
+    return formatLiters(value, this.locale(), digits);
   }
 
-  protected readonly chartFormat = (value: number): string => formatLiters(value, this.locale, 0);
+  protected readonly chartFormat = computed(() => {
+    const locale = this.locale();
+    return (value: number): string => formatLiters(value, locale, 0);
+  });
 
   protected async signIn(event: Event): Promise<void> {
     event.preventDefault();

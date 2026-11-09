@@ -1,16 +1,17 @@
 <main class="screen" [attr.data-mode]="mode()">
+  <div class="lang"><app-language-switch [value]="locale()" (changed)="setLocale($event)" /></div>
   @if (!online()) {
     <div class="banner offline" role="alert">
-      {{ m.offline }}
+      {{ m().offline }}
       @if (snapshot()?.phase === "dispensing") {
-        <strong>{{ m.offlineStop }}</strong>
+        <strong>{{ m().offlineStop }}</strong>
       }
     </div>
   }
   @if (snapshot()?.estopEngaged) {
     <div class="banner estop" role="alert">
-      <strong>{{ m.estop }}</strong>
-      <span>{{ m.estopHint }}</span>
+      <strong>{{ m().estop }}</strong>
+      <span>{{ m().estopHint }}</span>
     </div>
   } @else if (notice(); as text) {
     <div class="banner notice" role="status" data-testid="notice">{{ text }}</div>
@@ -21,69 +22,69 @@
       @case ("idle") {
         <section class="panel center">
           <div class="fob" aria-hidden="true"></div>
-          <h1>{{ m.idleTitle }}</h1>
-          <p class="hint">{{ m.idleHint }}</p>
+          <h1>{{ m().idleTitle }}</h1>
+          <p class="hint">{{ m().idleHint }}</p>
         </section>
       }
       @case ("awaiting_machine") {
-        <section class="panel">
-          <h1>{{ m.machineTitle }}</h1>
+        <section class="panel entry">
+          <h1>{{ m().machineTitle }}</h1>
           <app-keypad
             [(value)]="equipment"
-            [hint]="m.machineHint"
-            [eraseLabel]="m.erase"
-            [confirmLabel]="m.confirm"
+            [hint]="m().machineHint"
+            [eraseLabel]="m().erase"
+            [confirmLabel]="m().confirm"
             (submit)="selectMachine($event)"
           />
         </section>
       }
       @case ("authorized") {
         <section class="panel center">
-          <h1>{{ m.authorizedTitle }}</h1>
+          <h1>{{ m().authorizedTitle }}</h1>
           <dl class="facts">
-            <div><dt>{{ m.operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m.machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
           </dl>
-          <p class="hint">{{ m.authorizedHint }}</p>
+          <p class="hint">{{ m().authorizedHint }}</p>
           <div class="actions">
             <button type="button" class="big go" [disabled]="!online() || s.estopEngaged" (click)="start()">
-              {{ m.start }}
+              {{ m().start }}
             </button>
             <button type="button" class="big quiet" [disabled]="!online()" (click)="stop()">
-              {{ m.cancel }}
+              {{ m().cancel }}
             </button>
           </div>
         </section>
       }
       @case ("dispensing") {
         <section class="panel center">
-          <h1>{{ m.dispensingTitle }}</h1>
+          <h1>{{ m().dispensingTitle }}</h1>
           <div class="liters" data-testid="liters" aria-live="off">{{ liters() }}</div>
           <dl class="facts">
-            <div><dt>{{ m.operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m.machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
           </dl>
-          <p class="pump" [class.on]="s.pumpOn">{{ s.pumpOn ? m.pumpOn : m.pumpOff }}</p>
+          <p class="pump" [class.on]="s.pumpOn">{{ s.pumpOn ? m().pumpOn : m().pumpOff }}</p>
           <div class="actions">
             <button type="button" class="big stop" [disabled]="!online()" (click)="stop()">
-              {{ m.stop }}
+              {{ m().stop }}
             </button>
           </div>
         </section>
       }
       @case ("finished") {
         <section class="panel center">
-          <h1>{{ m.finishedTitle }}</h1>
-          <p class="label">{{ m.total }}</p>
+          <h1>{{ m().finishedTitle }}</h1>
+          <p class="label">{{ m().total }}</p>
           <div class="liters" data-testid="liters">{{ liters() }}</div>
           <dl class="facts">
-            <div><dt>{{ m.operator }}</dt><dd>{{ s.operatorId }}</dd></div>
-            <div><dt>{{ m.machine }}</dt><dd>{{ s.machineId }}</dd></div>
+            <div><dt>{{ m().operator }}</dt><dd>{{ s.operatorId }}</dd></div>
+            <div><dt>{{ m().machine }}</dt><dd>{{ s.machineId }}</dd></div>
           </dl>
           <p class="hint">{{ endReason() }}</p>
           <div class="actions">
             <button type="button" class="big go" [disabled]="!online()" (click)="dismiss()">
-              {{ m.ok }}
+              {{ m().ok }}
             </button>
           </div>
         </section>

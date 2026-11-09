@@ -218,8 +218,8 @@ describe("controller address", () => {
   });
 
   it("chooses the language from the query", () => {
-    expect(localeFrom("")).toBe("es");
-    expect(localeFrom("?lang=en")).toBe("en");
-    expect(localeFrom("?lang=fr")).toBe("es");
+    expect(localeFrom("")).toBe("en");
+    expect(localeFrom("?lang=es")).toBe("es");
+    expect(localeFrom("?lang=fr")).toBe("en");
   });
 });

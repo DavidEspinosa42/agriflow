@@ -4,7 +4,14 @@ import type {
   StoredTransactionDto,
   TransactionPage,
 } from "@agriflow/core";
-import { ApiError, type ApiErrorKind, type Locale, ManagerApi } from "@agriflow/shared";
+import {
+  ApiError,
+  type ApiErrorKind,
+  browserStorage,
+  initialLocale,
+  type Locale,
+  ManagerApi,
+} from "@agriflow/shared";
 import { Injectable, InjectionToken, inject, signal } from "@angular/core";
 
 export const PAGE_SIZE = 10;
@@ -22,7 +29,7 @@ export const API_FACTORY = new InjectionToken<ApiFactory>("apiFactory", {
 export const NOW = new InjectionToken<() => number>("now", { factory: () => () => Date.now() });
 
 export const LOCALE = new InjectionToken<Locale>("locale", {
-  factory: () => (new URLSearchParams(location.search).get("lang") === "en" ? "en" : "es"),
+  factory: () => initialLocale(location.search, browserStorage()),
 });
 
 export interface Filters {

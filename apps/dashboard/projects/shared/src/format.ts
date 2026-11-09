@@ -3,7 +3,7 @@ export type Locale = "es" | "en";
 const TAGS: Record<Locale, string> = { es: "es-AR", en: "en-GB" };
 
 /** 84.3 becomes "84,3 L" in Spanish and "84.3 L" in English. */
-export function formatLiters(liters: number, locale: Locale = "es", digits = 1): string {
+export function formatLiters(liters: number, locale: Locale = "en", digits = 1): string {
   return `${new Intl.NumberFormat(TAGS[locale], {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
@@ -11,7 +11,7 @@ export function formatLiters(liters: number, locale: Locale = "es", digits = 1):
 }
 
 /** Date and time in the farm's time zone, for example "9/3/26, 22:00". */
-export function formatDateTime(ms: number, locale: Locale = "es", timeZone?: string): string {
+export function formatDateTime(ms: number, locale: Locale = "en", timeZone?: string): string {
   return new Intl.DateTimeFormat(TAGS[locale], {
     dateStyle: "short",
     timeStyle: "short",

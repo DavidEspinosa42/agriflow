@@ -1,19 +1,17 @@
 <header class="top">
-  <h1>{{ m.title }}</h1>
-  @if (store.signedIn()) {
-    <div class="tools">
-      <label>
-        {{ m.period }}
-        <select (change)="store.setDays(+$any($event.target).value)">
-          @for (p of periods; track p) {
-            <option [value]="p" [selected]="p === store.days()">{{ m.days(p) }}</option>
-          }
-        </select>
-      </label>
-      <button type="button" (click)="store.refresh()" [disabled]="store.loading()">{{ m.refresh }}</button>
-      <button type="button" class="quiet" (click)="store.signOut()">{{ m.signOut }}</button>
-    </div>
-  }
+  <h1>{{ m().title }}</h1>
+  <div class="tools">
+    <app-language-switch [value]="locale()" (changed)="setLocale($event)" />
+    @if (store.signedIn()) {
+      <select [attr.aria-label]="m().period" (change)="store.setDays(+$any($event.target).value)">
+        @for (p of periods; track p) {
+          <option [value]="p" [selected]="p === store.days()">{{ m().days(p) }}</option>
+        }
+      </select>
+      <button type="button" (click)="store.refresh()" [disabled]="store.loading()">{{ m().refresh }}</button>
+      <button type="button" class="quiet" (click)="store.signOut()">{{ m().signOut }}</button>
+    }
+  </div>
 </header>
 
 @if (error(); as text) {
@@ -23,9 +21,9 @@
 @if (!store.signedIn()) {
   <main class="login">
     <form (submit)="signIn($event)">
-      <h2>{{ m.loginTitle }}</h2>
+      <h2>{{ m().loginTitle }}</h2>
       <label>
-        {{ m.tokenLabel }}
+        {{ m().tokenLabel }}
         <input
           type="password"
           autocomplete="off"
@@ -34,32 +32,32 @@
           (input)="token.set($any($event.target).value)"
         />
       </label>
-      <button type="submit" [disabled]="token() === '' || store.loading()">{{ m.signIn }}</button>
+      <button type="submit" [disabled]="token() === '' || store.loading()">{{ m().signIn }}</button>
     </form>
   </main>
 } @else if (data(); as d) {
   <main class="dash" [attr.aria-busy]="store.loading()">
     @if (totals(); as t) {
       <section class="kpis">
-        <div class="kpi"><span class="label">{{ m.totalLiters }}</span><span class="value" data-testid="kpi-liters">{{ t.liters }}</span></div>
-        <div class="kpi"><span class="label">{{ m.sessions }}</span><span class="value" data-testid="kpi-sessions">{{ t.sessions }}</span></div>
-        <div class="kpi"><span class="label">{{ m.average }}</span><span class="value">{{ t.average }}</span></div>
-        <div class="kpi"><span class="label">{{ m.machinesInUse }}</span><span class="value">{{ t.machines }}</span></div>
+        <div class="kpi"><span class="label">{{ m().totalLiters }}</span><span class="value" data-testid="kpi-liters">{{ t.liters }}</span></div>
+        <div class="kpi"><span class="label">{{ m().sessions }}</span><span class="value" data-testid="kpi-sessions">{{ t.sessions }}</span></div>
+        <div class="kpi"><span class="label">{{ m().average }}</span><span class="value">{{ t.average }}</span></div>
+        <div class="kpi"><span class="label">{{ m().machinesInUse }}</span><span class="value">{{ t.machines }}</span></div>
       </section>
     }
 
     <section class="card">
-      <h2>{{ m.dailyTitle }}</h2>
+      <h2>{{ m().dailyTitle }}</h2>
       @if (d.daily.length === 0) {
-        <p class="empty">{{ m.noData }}</p>
+        <p class="empty">{{ m().noData }}</p>
       } @else {
-        <app-bar-chart [bars]="bars()" [format]="chartFormat" [summary]="chartSummary()" />
+        <app-bar-chart [bars]="bars()" [format]="chartFormat()" [summary]="chartSummary()" />
       }
     </section>
 
     <div class="two">
       <section class="card">
-        <h2>{{ m.byMachine }}</h2>
+        <h2>{{ m().byMachine }}</h2>
         <ul class="share" data-testid="by-machine">
           @for (r of d.machines; track r.key) {
             <li>
@@ -68,12 +66,12 @@
               <span class="num">{{ liters(r.liters, 0) }}</span>
             </li>
           } @empty {
-            <li class="empty">{{ m.noData }}</li>
+            <li class="empty">{{ m().noData }}</li>
           }
         </ul>
       </section>
       <section class="card">
-        <h2>{{ m.byOperator }}</h2>
+        <h2>{{ m().byOperator }}</h2>
         <ul class="share" data-testid="by-operator">
           @for (r of d.operators; track r.key) {
             <li>
@@ -82,42 +80,42 @@
               <span class="num">{{ liters(r.liters, 0) }}</span>
             </li>
           } @empty {
-            <li class="empty">{{ m.noData }}</li>
+            <li class="empty">{{ m().noData }}</li>
           }
         </ul>
       </section>
     </div>
 
     <section class="card">
-      <h2>{{ m.controllers }}</h2>
+      <h2>{{ m().controllers }}</h2>
       <ul class="devices" data-testid="devices">
         @for (dev of devices(); track dev.deviceId) {
           <li>
             <span class="dot" [attr.data-health]="dev.health" aria-hidden="true"></span>
             <strong>{{ dev.deviceId }}</strong>
             <span class="muted">{{ dev.tankId }}</span>
-            <span class="status">{{ dev.label }}@if (dev.since) { · {{ m.lastSync }} {{ dev.since }} }</span>
+            <span class="status">{{ dev.label }}@if (dev.since) { · {{ m().lastSync }} {{ dev.since }} }</span>
           </li>
         }
       </ul>
     </section>
 
     <section class="card">
-      <h2>{{ m.transactions }}</h2>
+      <h2>{{ m().transactions }}</h2>
       <div class="filters">
         <label>
-          {{ m.machine }}
+          {{ m().machine }}
           <select data-testid="filter-machine" (change)="store.setFilter({ machineId: pick($event) })">
-            <option value="">{{ m.all }}</option>
+            <option value="">{{ m().all }}</option>
             @for (r of d.machines; track r.key) {
               <option [value]="r.key" [selected]="store.filters().machineId === r.key">{{ r.key }}</option>
             }
           </select>
         </label>
         <label>
-          {{ m.operator }}
+          {{ m().operator }}
           <select data-testid="filter-operator" (change)="store.setFilter({ operatorId: pick($event) })">
-            <option value="">{{ m.all }}</option>
+            <option value="">{{ m().all }}</option>
             @for (r of d.operators; track r.key) {
               <option [value]="r.key" [selected]="store.filters().operatorId === r.key">{{ r.key }}</option>
             }
@@ -128,11 +126,11 @@
         <table>
           <thead>
             <tr>
-              <th>{{ m.date }}</th>
-              <th>{{ m.machine }}</th>
-              <th>{{ m.operator }}</th>
-              <th class="r">{{ m.liters }}</th>
-              <th>{{ m.reason }}</th>
+              <th>{{ m().date }}</th>
+              <th>{{ m().machine }}</th>
+              <th>{{ m().operator }}</th>
+              <th class="r">{{ m().liters }}</th>
+              <th>{{ m().reason }}</th>
             </tr>
           </thead>
           <tbody data-testid="rows">
@@ -145,20 +143,20 @@
                 <td>{{ row.reason }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="empty">{{ m.noData }}</td></tr>
+              <tr><td colspan="5" class="empty">{{ m().noData }}</td></tr>
             }
           </tbody>
         </table>
       </div>
       @if (paging(); as p) {
         <div class="pager">
-          <button type="button" [disabled]="!p.hasPrevious" (click)="store.setOffset(d.page.offset - d.page.limit)">{{ m.previous }}</button>
+          <button type="button" [disabled]="!p.hasPrevious" (click)="store.setOffset(d.page.offset - d.page.limit)">{{ m().previous }}</button>
           <span>{{ p.text }}</span>
-          <button type="button" [disabled]="!p.hasNext" (click)="store.setOffset(d.page.offset + d.page.limit)">{{ m.next }}</button>
+          <button type="button" [disabled]="!p.hasNext" (click)="store.setOffset(d.page.offset + d.page.limit)">{{ m().next }}</button>
         </div>
       }
     </section>
   </main>
 } @else {
-  <p class="loading" role="status">{{ m.loading }}</p>
+  <p class="loading" role="status">{{ m().loading }}</p>
 }

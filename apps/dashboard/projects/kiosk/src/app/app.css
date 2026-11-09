@@ -214,3 +214,17 @@ h1 {
     inset: 1rem;
   }
 }
+
+.lang {
+  position: fixed;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  z-index: 1;
+  color: var(--text);
+}
+
+/* The equipment screen: centred title with room above and below it. */
+.panel.entry h1 {
+  text-align: center;
+  padding: 0.75rem 0 0.5rem;
+}

@@ -1,20 +1,44 @@
-import { formatLiters } from "@agriflow/shared";
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from "@angular/core";
+import {
+  browserStorage,
+  formatLiters,
+  LanguageSwitch,
+  type Locale,
+  saveLocale,
+} from "@agriflow/shared";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from "@angular/core";
 import { Keypad } from "./keypad";
 import { KioskStore, LOCALE } from "./kiosk-store";
 import { endReasonText, messagesFor, noticeText } from "./messages";
 
 @Component({
   selector: "app-root",
-  imports: [Keypad],
+  imports: [Keypad, LanguageSwitch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./app.html",
   styleUrl: "./app.css",
 })
 export class App {
   readonly #store = inject(KioskStore);
-  protected readonly locale = inject(LOCALE);
-  protected readonly m = messagesFor(this.locale);
+  protected readonly locale = signal(inject(LOCALE));
+  protected readonly m = computed(() => messagesFor(this.locale()));
+
+  constructor() {
+    effect(() => {
+      document.documentElement.lang = this.locale();
+    });
+  }
+
+  protected setLocale(locale: Locale): void {
+    this.locale.set(locale);
+    saveLocale(locale, browserStorage());
+  }
 
   protected readonly snapshot = this.#store.snapshot;
   protected readonly online = computed(() => this.#store.connection() === "open");
@@ -31,14 +55,14 @@ export class App {
 
   protected readonly notice = computed(() => {
     const s = this.snapshot();
-    return s === null ? null : noticeText(s.notice, this.m);
+    return s === null ? null : noticeText(s.notice, this.m());
   });
 
   protected readonly liters = computed(() =>
-    formatLiters(this.snapshot()?.liters ?? 0, this.locale),
+    formatLiters(this.snapshot()?.liters ?? 0, this.locale()),
   );
   protected readonly endReason = computed(() =>
-    endReasonText(this.snapshot()?.endReason ?? null, this.m),
+    endReasonText(this.snapshot()?.endReason ?? null, this.m()),
   );
 
   protected selectMachine(equipmentNumber: string): void {

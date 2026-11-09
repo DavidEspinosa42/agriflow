@@ -81,8 +81,8 @@ const MAX_LENGTH = 16;
 export class Keypad {
   readonly value = model("");
   readonly hint = input("");
-  readonly eraseLabel = input("Borrar");
-  readonly confirmLabel = input("Aceptar");
+  readonly eraseLabel = input("Erase");
+  readonly confirmLabel = input("Confirm");
   readonly submit = output<string>();
   protected readonly rows = ROWS;
 

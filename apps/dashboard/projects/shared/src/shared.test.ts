@@ -1,6 +1,7 @@
 import type { Snapshot } from "@agriflow/core";
 import { describe, expect, it } from "vitest";
 import { deviceHealth, formatAge, formatDateTime, formatLiters } from "./format.ts";
+import { initialLocale, saveLocale } from "./locale.ts";
 import { ApiError, ManagerApi } from "./manager-api.ts";
 import { type ConnectionState, OperatorClient, type SocketLike } from "./operator-client.ts";
 
@@ -216,5 +217,28 @@ describe("format", () => {
     expect(deviceHealth(null, 1000, 500)).toBe("never");
     expect(deviceHealth(900, 1000, 500)).toBe("ok");
     expect(deviceHealth(100, 1000, 500)).toBe("stale");
+  });
+});
+
+describe("language choice", () => {
+  const store = (value: string | null) => ({ getItem: () => value });
+  it("defaults to English, honours the query, then the saved choice", () => {
+    expect(initialLocale("", store(null))).toBe("en");
+    expect(initialLocale("?lang=es", store("en"))).toBe("es");
+    expect(initialLocale("", store("es"))).toBe("es");
+    expect(initialLocale("", store("fr"))).toBe("en");
+    expect(initialLocale("?lang=fr", store(null))).toBe("en");
+  });
+  it("survives storage that throws", () => {
+    const broken = {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+    };
+    expect(initialLocale("", broken)).toBe("en");
+    expect(() => saveLocale("es", broken)).not.toThrow();
   });
 });
